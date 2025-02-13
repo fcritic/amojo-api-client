@@ -1,0 +1,55 @@
+{
+  "name": "fcritic/amojo-api-client",
+  "description": "PHP client for the amoCRM chat API service",
+  "keywords": [
+    "php",
+    "rest api",
+    "client",
+    "amocrm",
+    "amojo",
+    "api chat",
+    "amojo api"
+  ],
+  "license": "MIT",
+  "version": "1.0",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Vladislav Bochkarev",
+      "email": "mrx.critic@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "AmoJo\\": "src/"
+    }
+  },
+  "require": {
+    "php": "^7.4",
+    "guzzlehttp/guzzle": "^7.2",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "*",
+    "phpunit/phpunit": "^8.5"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit -c phpunit.xml",
+    "cs:check": "vendor/bin/phpcs",
+    "cs:fix": "vendor/bin/phpcbf",
+    "git:prepush": [
+      "@cs:check",
+      "@test"
+    ]
+  }
+}
