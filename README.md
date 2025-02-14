@@ -1,18 +1,20 @@
 ![amoJo PHP Client](.github/logo.png?raw=true)
 <p align="center">
-
   <h1 align="center">amoJo PHP Client</h1>
   <p align="center">🚀 PHP клиент для интеграции с сервисом API чатов amoCRM</p>
 
   <p align="center">
-    <a href="">
-      <img src="" alt="Версия">
+    <a href="https://packagist.org/packages/fcritic/amojo-api-client">
+      <img src="https://img.shields.io/packagist/v/fcritic/amojo-api-client.svg?style=flat-square" alt="Версия">
+    </a>
+    <a href="https://packagist.org/packages/fcritic/amojo-api-client">
+      <img src="https://img.shields.io/packagist/dt/fcritic/amojo-api-client.svg?style=flat-square" alt="Загрузки">
     </a>
     <a href="https://php.net">
-      <img src="https://img.shields.io/badge/PHP-7.4%2B-blue" alt="Версия PHP">
+      <img src="https://img.shields.io/badge/PHP-7.4%2B-blue.svg?style=flat-square" alt="Версия PHP">
     </a>
     <a href="LICENSE">
-      <img src="https://img.shields.io/badge/license-MIT-brightgreen" alt="License">
+      <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square" alt="License">
     </a>
   </p>
 </p>
