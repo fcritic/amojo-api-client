@@ -4,24 +4,25 @@ declare(strict_types=1);
 
 namespace AmoJo\Client;
 
+use AmoJo\DTO\ResponseFactory;
 use AmoJo\DTO\AbstractResponse;
 use AmoJo\DTO\ConnectResponse;
-use AmoJo\DTO\CreateChatResponse;
-use AmoJo\DTO\DeliveryResponse;
 use AmoJo\DTO\DisconnectResponse;
-use AmoJo\DTO\HistoryChatResponse;
+use AmoJo\DTO\CreateChatResponse;
 use AmoJo\DTO\MessageResponse;
-use AmoJo\DTO\ReactResponse;
-use AmoJo\DTO\ResponseFactory;
+use AmoJo\DTO\DeliveryResponse;
+use AmoJo\DTO\HistoryChatResponse;
 use AmoJo\DTO\TypingResponse;
-use AmoJo\Enum\ActionsType;
-use AmoJo\Enum\EventType;
-use AmoJo\Exception\AmoJoException;
-use AmoJo\Exception\RequiredParametersMissingException;
+use AmoJo\DTO\ReactResponse;
 use AmoJo\Models\Channel;
 use AmoJo\Models\Conversation;
 use AmoJo\Models\Deliver;
 use AmoJo\Models\Payload;
+use AmoJo\Models\Scope;
+use AmoJo\Enum\ActionsType;
+use AmoJo\Enum\EventType;
+use AmoJo\Exception\AmoJoException;
+use AmoJo\Exception\RequiredParametersMissingException;
 use AmoJo\Models\Interfaces\MessageInterface;
 use AmoJo\Models\Interfaces\SenderInterface;
 use AmoJo\Models\Interfaces\UserInterface;
@@ -62,7 +63,7 @@ class AmoJoClient
     {
         $this->validateUuid($accountUid, 'accountUid');
 
-        $response = $this->gateway->request('POST', $this->channel->getUid() . ActionsType::CONNECT, [
+        $response = $this->gateway->post($this->channel->getUid() . ActionsType::CONNECT, [
             'account_id'       => $accountUid,
             'title'            => $title,
             'hook_api_version' => $hookVersion,
@@ -83,7 +84,7 @@ class AmoJoClient
     {
         $this->validateUuid($accountUid, 'accountUid');
 
-        $response = $this->gateway->request('DELETE', $this->channel->getUid() . ActionsType::DISCONNECT, [
+        $response = $this->gateway->delete($this->channel->getUid() . ActionsType::DISCONNECT, [
             'account_id' => $accountUid,
         ]);
 
@@ -94,8 +95,7 @@ class AmoJoClient
      * `Метод создание чата`
      * @link https://www.amocrm.ru/developers/content/chats/chat-api-reference#Создание-нового-чата
      *
-     * @param string $scopeId Строится из ChannelUid + AccountUid.
-     * Возвращается при подключении канала ConnectResponse->getScopeId()
+     * @param string $accountUid GET /api/v4/account?with=amojo_id
      * @param Conversation $conversation Передается ID чата на стороне интеграции
      * @param UserInterface $contact Модель контакта со свойствами на стороне интеграции
      * @param string|null $externalId Источник https://www.amocrm.ru/developers/content/crm_platform/sources-api
@@ -104,7 +104,7 @@ class AmoJoClient
      * @return CreateChatResponse
      */
     public function createChat(
-        string $scopeId,
+        string $accountUid,
         Conversation $conversation,
         UserInterface $contact,
         ?string $externalId = null
@@ -126,7 +126,11 @@ class AmoJoClient
             unset($socialProfile['source']);
         }
 
-        $response = $this->gateway->request('POST', $scopeId . ActionsType::CHAT, $socialProfile);
+        $response = $this->gateway->post(
+            Scope::create($this->channel->getUid(), $accountUid)->getScopeId() . ActionsType::CHAT,
+            $socialProfile
+        );
+
         return ResponseFactory::create(ActionsType::CHAT, $response);
     }
 
@@ -134,15 +138,14 @@ class AmoJoClient
      * `Метод импорта сообщения`
      * @link https://www.amocrm.ru/developers/content/chats/chat-api-reference#Отправка-редактирование-или-импорт-сообщения
      *
-     * @param string $scopeId Строится из ChannelUid + AccountUid.
-     *  Возвращается при подключении канала ConnectResponse->getScopeId()
+     * @param string $accountUid GET /api/v4/account?with=amojo_id
      * @param Payload $payload Запрос модели
      * @param string|null $externalId Источник https://www.amocrm.ru/developers/content/crm_platform/sources-api
      * - Важно: источник должен иметь параметр origin_code со значением кода канала чатов
      * - Важно: источник должен быть создан от интеграции к которой привязан канал чатов
      * @return MessageResponse
      */
-    public function sendMessage(string $scopeId, Payload $payload, ?string $externalId = null): AbstractResponse
+    public function sendMessage(string $accountUid, Payload $payload, ?string $externalId = null): AbstractResponse
     {
         $message = [
             'event_type' => EventType::NEW_MESSAGE,
@@ -154,7 +157,10 @@ class AmoJoClient
             $message['payload'] = array_merge($source, $message['payload']);
         }
 
-        $response = $this->gateway->request('POST', $scopeId, $message);
+        $response = $this->gateway->post(
+            Scope::create($this->channel->getUid(), $accountUid)->getScopeId(),
+            $message
+        );
 
         return ResponseFactory::create(ActionsType::MESSAGE, $response);
     }
@@ -163,14 +169,13 @@ class AmoJoClient
      * `Метод редактирования сообщения`
      * @link https://www.amocrm.ru/developers/content/chats/chat-api-reference#Отправка-редактирование-или-импорт-сообщения
      *
-     * @param string $scopeId Строится из ChannelUid + AccountUid.
-     *  Возвращается при подключении канала ConnectResponse->getScopeId()
+     * @param string $accountUid GET /api/v4/account?with=amojo_id
      * @param Payload $payload Запрос модели
      * @return MessageResponse
      */
-    public function editMessage(string $scopeId, Payload $payload): AbstractResponse
+    public function editMessage(string $accountUid, Payload $payload): AbstractResponse
     {
-        $response = $this->gateway->request('POST', $scopeId, [
+        $response = $this->gateway->post(Scope::create($this->channel->getUid(), $accountUid)->getScopeId(), [
             'event_type' => EventType::EDIT_MESSAGE,
             'payload'    => $payload->toApi(true),
         ]);
@@ -182,18 +187,20 @@ class AmoJoClient
      * `Метод обновления статуса доставки сообщения`
      * @link https://www.amocrm.ru/developers/content/chats/chat-api-reference#Обновление-статуса-доставки-сообщения
      *
-     * @param string $scopeId Строится из ChannelUid + AccountUid.
-     *  Возвращается при подключении канала ConnectResponse->getScopeId()
+     * @param string $accountUid GET /api/v4/account?with=amojo_id
      * @param string $messageUid Идентификатор сообщения на стороне API чатов.
      * Получаешь в вебхуке при отправленном исходящим сообщение.
      * Должно совпадать с msgid в URL
      * @param Deliver $deliver
      * @return DeliveryResponse
      */
-    public function deliverStatus(string $scopeId, string $messageUid, Deliver $deliver): AbstractResponse
+    public function deliverStatus(string $accountUid, string $messageUid, Deliver $deliver): AbstractResponse
     {
-        $uri = $scopeId . '/' . $messageUid . ActionsType::DELIVERY_STATUS;
-        $response = $this->gateway->request('POST', $uri, $deliver->toApi($messageUid));
+        $uri =
+            Scope::create($this->channel->getUid(), $accountUid)->getScopeId()
+            . '/' . $messageUid . ActionsType::DELIVERY_STATUS;
+
+        $response = $this->gateway->post($uri, $deliver->toApi($messageUid));
 
         return ResponseFactory::create(ActionsType::DELIVERY_STATUS, $response);
     }
@@ -207,16 +214,18 @@ class AmoJoClient
      * (int) `offset` - Оффсет выборки сообщений (сколько записей от начала выборки пропускаем)
      * (int) `limit` - Количество возвращаемых сущностей за один запрос (Максимум – 50)
      *
-     * @param string $scopeId Строится из ChannelUid + AccountUid.
-     *  Возвращается при подключении канала ConnectResponse->getScopeId()
+     * @param string $accountUid GET /api/v4/account?with=amojo_id
      * @param string $conversationRefId ID чата в API чатов
      * @param array $query GET параметры
      * @return HistoryChatResponse
      */
-    public function getHistoryChat(string $scopeId, string $conversationRefId, array $query = []): AbstractResponse
+    public function getHistoryChat(string $accountUid, string $conversationRefId, array $query = []): AbstractResponse
     {
-        $uri = $scopeId . ActionsType::CHAT . '/' . $conversationRefId . ActionsType::GET_HISTORY;
-        $response = $this->gateway->request('GET', $uri, [], $query);
+        $uri =
+            Scope::create($this->channel->getUid(), $accountUid)->getScopeId()
+            . ActionsType::CHAT . '/' . $conversationRefId . ActionsType::GET_HISTORY;
+
+        $response = $this->gateway->get($uri, $query);
 
         return ResponseFactory::create(ActionsType::GET_HISTORY, $response);
     }
@@ -225,18 +234,20 @@ class AmoJoClient
      * `Метод передачи информации о печатание`
      * @link https://www.amocrm.ru/developers/content/chats/chat-api-reference#Передача-информации-о-печатание
      *
-     * @param string $scopeId Строится из ChannelUid + AccountUid.
-     *  Возвращается при подключении канала ConnectResponse->getScopeId()
+     * @param string $accountUid GET /api/v4/account?with=amojo_id
      * @param Conversation $conversation ID чата на стороне интеграции
      * @param SenderInterface $sender ID пользователя на стороне интеграции
      * @return TypingResponse
      */
-    public function typing(string $scopeId, Conversation $conversation, SenderInterface $sender): AbstractResponse
+    public function typing(string $accountUid, Conversation $conversation, SenderInterface $sender): AbstractResponse
     {
-        $response = $this->gateway->request('POST', $scopeId . ActionsType::TYPING, [
-            'conversation_id' => $conversation->getId(),
-            'sender'          => $sender->toTyping()
-        ]);
+        $response = $this->gateway->post(
+            Scope::create($this->channel->getUid(), $accountUid)->getScopeId() . ActionsType::TYPING,
+            [
+                'conversation_id' => $conversation->getId(),
+                'sender'          => $sender->toTyping()
+            ]
+        );
 
         return ResponseFactory::create(ActionsType::TYPING, $response);
     }
@@ -245,8 +256,7 @@ class AmoJoClient
      * `Метод отправки или снятия реакции`
      * @link https://www.amocrm.ru/developers/content/chats/chat-api-reference#Отправка-или-снятие-реакции
      *
-     * @param string $scopeId Строится из ChannelUid + AccountUid.
-     *  Возвращается при подключении канала ConnectResponse->getScopeId()
+     * @param string $accountUid GET /api/v4/account?with=amojo_id
      * @param Conversation $conversation ID чата на стороне интеграции
      * @param SenderInterface $sender ID пользователя на стороне интеграции/в API чатов
      * @param MessageInterface $message ID сообщения на стороне интеграции/в API чатов
@@ -255,21 +265,24 @@ class AmoJoClient
      * @return ReactResponse
      */
     public function react(
-        string $scopeId,
+        string $accountUid,
         Conversation $conversation,
         SenderInterface $sender,
         MessageInterface $message,
         string $emoji = null,
         bool $type = true
     ): AbstractResponse {
-        $response = $this->gateway->request('POST', $scopeId . ActionsType::REACT, array_filter([
-            'conversation_id' => $conversation->getId(),
-            'id'              => $message->getRefUid(),
-            'msgid'           => $message->getUid(),
-            'user'            => $sender->toReact(),
-            'type'            => $type ? 'react' : 'unreact',
-            'emoji'           => $emoji
-        ]));
+        $response = $this->gateway->post(
+            Scope::create($this->channel->getUid(), $accountUid)->getScopeId() . ActionsType::REACT,
+            array_filter([
+                'conversation_id' => $conversation->getId(),
+                'id'              => $message->getRefUid(),
+                'msgid'           => $message->getUid(),
+                'user'            => $sender->toReact(),
+                'type'            => $type ? 'react' : 'unreact',
+                'emoji'           => $emoji
+            ])
+        );
 
         return ResponseFactory::create(ActionsType::REACT, $response);
     }
