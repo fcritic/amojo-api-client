@@ -7,10 +7,23 @@ namespace AmoJo\Client;
 interface ApiGatewayInterface
 {
     /**
-     * @param string $method
+     * @param string $uri
+     * @param array $query
+     * @return array
+     */
+    public function get(string $uri, array $query = []): array;
+
+    /**
      * @param string $uri
      * @param array $data
      * @return array
      */
-    public function request(string $method, string $uri, array $data = [], array $query = []): array;
+    public function post(string $uri, array $data = []): array;
+
+    /**
+     * @param string $uri
+     * @param array $data
+     * @return array
+     */
+    public function delete(string $uri, array $data = []): array;
 }

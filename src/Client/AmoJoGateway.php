@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AmoJo\Client;
 
 use AmoJo\Enum\HeaderType;
+use AmoJo\Enum\HttpMethod;
 use AmoJo\Exception\AmoJoException;
 use AmoJo\Exception\InvalidResponseException;
 use AmoJo\Exception\NotFountException;
@@ -80,24 +81,47 @@ class AmoJoGateway implements ApiGatewayInterface
     }
 
     /**
-     * @param string $method
      * @param string $uri
-     * @param array $data
      * @param array $query
      * @return array
      */
-    public function request(string $method, string $uri, array $data = [], array $query = []): array
+    public function get(string $uri, array $query = []): array
     {
-        $options = [];
+        return $this->executeRequest(HttpMethod::GET_REQUEST, $uri, ['query' => $query]);
+    }
 
-        if ($method === 'GET') {
-            $options['query'] = $query;
-        } else {
-            $options['json'] = $data;
-        }
+    /**
+     * @param string $uri
+     * @param array $data
+     * @return array
+     */
+    public function post(string $uri, array $data = []): array
+    {
+        return $this->executeRequest(HttpMethod::POST_REQUEST, $uri, ['json' => $data]);
+    }
 
+    /**
+     * @param string $uri
+     * @param array $data
+     * @return array
+     */
+    public function delete(string $uri, array $data = []): array
+    {
+        return $this->executeRequest(HttpMethod::DELETE_REQUEST, $uri, ['json' => $data]);
+    }
+
+    /**
+     * @param string $method
+     * @param string $uri
+     * @param array $options
+     * @return array
+     */
+    private function executeRequest(string $method, string $uri, array $options): array
+    {
         try {
-            return $this->parserResponse($this->client->request($method, self::BASE_PATH . $uri, $options));
+            $response = $this->client->request($method, self::BASE_PATH . $uri, $options);
+
+            return $this->parserResponse($response);
         } catch (ClientException $e) {
             $this->handleClientError($e);
         } catch (GuzzleException $e) {
