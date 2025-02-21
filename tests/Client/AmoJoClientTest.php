@@ -17,6 +17,7 @@ use AmoJo\DTO\TypingResponse;
 use AmoJo\Enum\ActionsType;
 use AmoJo\Enum\DeliveryStatus;
 use AmoJo\Enum\ErrorCode;
+use AmoJo\Enum\HttpMethod;
 use AmoJo\Exception\AmoJoException;
 use AmoJo\Models\Channel;
 use AmoJo\Models\Conversation;
@@ -95,12 +96,12 @@ class AmoJoClientTest extends TestCase
         ];
 
         $this->gateway->expects($this->once())
-            ->method('request')
-            ->with('POST', self::CHANNEL_UID . ActionsType::CONNECT, [
+            ->method(HttpMethod::POST_REQUEST)
+            ->with(self::CHANNEL_UID . ActionsType::CONNECT, $this->equalTo([
                 'account_id'       => self::ACCOUNT_UID,
                 'title'            => null,
                 'hook_api_version' => 'v2'
-            ])
+            ]))
             ->willReturn($expectedResponse);
 
         $response = $this->client->connect(self::ACCOUNT_UID);
@@ -119,10 +120,10 @@ class AmoJoClientTest extends TestCase
     public function testDisconnect(): void
     {
         $this->gateway->expects($this->once())
-            ->method('request')
-            ->with('DELETE', self::CHANNEL_UID . ActionsType::DISCONNECT, [
+            ->method(HttpMethod::DELETE_REQUEST)
+            ->with(self::CHANNEL_UID . ActionsType::DISCONNECT, $this->equalTo([
                 'account_id' => self::ACCOUNT_UID,
-            ]);
+            ]));
 
         $response = $this->client->disconnect(self::ACCOUNT_UID);
         $this->assertInstanceOf(DisconnectResponse::class, $response);
@@ -153,26 +154,27 @@ class AmoJoClientTest extends TestCase
         ];
 
         $this->gateway->expects($this->once())
-            ->method('request')
+            ->method(HttpMethod::POST_REQUEST)
             ->with(
-                'POST',
                 self::SCOPE_ID . ActionsType::CHAT,
-                [
-                    'conversation_id' => $conversationId,
-                    'user'            => [
-                        'id'      => $userId,
-                        'name'    => $userName,
-                        'avatar'  => $avatarUrl,
-                        'profile' => [
-                            'phone' => $phone,
+                $this->equalTo(
+                    [
+                        'conversation_id' => $conversationId,
+                        'user'            => [
+                            'id'      => $userId,
+                            'name'    => $userName,
+                            'avatar'  => $avatarUrl,
+                            'profile' => [
+                                'phone' => $phone,
+                            ]
                         ]
                     ]
-                ]
+                )
             )
             ->willReturn($expectedResponse);
 
         $response = $this->client->createChat(
-            self::SCOPE_ID,
+            self::ACCOUNT_UID,
             (new Conversation())->setId($conversationId),
             (new Sender())
                 ->setId($userId)
@@ -212,18 +214,17 @@ class AmoJoClientTest extends TestCase
         ];
 
         $this->gateway->expects($this->once())
-            ->method('request')
+            ->method(HttpMethod::POST_REQUEST)
             ->with(
-                'POST',
                 self::SCOPE_ID,
                 $this->callback(function ($data) use ($externalId) {
-                    return $data['event_type'] === 'new_message'
+                        return $data['event_type'] === 'new_message'
                         && $data['payload']['source']['external_id'] === $externalId;
                 })
             )
             ->willReturn($expectedResponse);
 
-        $response = $this->client->sendMessage(self::SCOPE_ID, $payload, $externalId);
+        $response = $this->client->sendMessage(self::ACCOUNT_UID, $payload, $externalId);
 
         $this->assertInstanceOf(MessageResponse::class, $response);
         $this->assertEquals('b52c987e-1ef0-4544-b4e7-6d2ba665f9e4', $response->getConversationRefId());
@@ -239,19 +240,20 @@ class AmoJoClientTest extends TestCase
             ->setErrorCode(ErrorCode::CONVERSATION_CREATION_FAILED);
 
         $this->gateway->expects($this->once())
-            ->method('request')
+            ->method(HttpMethod::POST_REQUEST)
             ->with(
-                'POST',
                 self::SCOPE_ID . '/' . $messageUid . ActionsType::DELIVERY_STATUS,
-                [
-                    'msgid'           => $messageUid,
-                    'delivery_status' => DeliveryStatus::ERROR,
-                    'error_code'      => ErrorCode::CONVERSATION_CREATION_FAILED
-                ]
+                $this->equalTo(
+                    [
+                        'msgid'           => $messageUid,
+                        'delivery_status' => DeliveryStatus::ERROR,
+                        'error_code'      => ErrorCode::CONVERSATION_CREATION_FAILED
+                    ]
+                )
             )
             ->willReturn(['status' => 200]);
 
-        $response = $this->client->deliverStatus(self::SCOPE_ID, $messageUid, $deliver);
+        $response = $this->client->deliverStatus(self::ACCOUNT_UID, $messageUid, $deliver);
         $this->assertInstanceOf(DeliveryResponse::class, $response);
     }
 
@@ -329,16 +331,14 @@ class AmoJoClientTest extends TestCase
         ];
 
         $this->gateway->expects($this->once())
-            ->method('request')
+            ->method(HttpMethod::GET_REQUEST)
             ->with(
-                'GET',
                 self::SCOPE_ID . ActionsType::CHAT . '/' . $conversationRefId . ActionsType::GET_HISTORY,
-                [],
                 $query
             )
             ->willReturn($expectedResponse);
 
-        $response = $this->client->getHistoryChat(self::SCOPE_ID, $conversationRefId, $query);
+        $response = $this->client->getHistoryChat(self::ACCOUNT_UID, $conversationRefId, $query);
         $this->assertInstanceOf(HistoryChatResponse::class, $response);
         $this->assertEquals(
             '53da915d-32a0-4b8a-891d-da331b51cfc0',
@@ -356,18 +356,19 @@ class AmoJoClientTest extends TestCase
         $sender = (new Sender())->setId('3986893063');
 
         $this->gateway->expects($this->once())
-            ->method('request')
+            ->method(HttpMethod::POST_REQUEST)
             ->with(
-                'POST',
                 self::SCOPE_ID . ActionsType::TYPING,
-                [
-                    'conversation_id' => '12259256265',
-                    'sender' => ['id' => '3986893063']
-                ]
+                $this->equalTo(
+                    [
+                        'conversation_id' => '12259256265',
+                        'sender' => ['id' => '3986893063']
+                    ]
+                )
             )
             ->willReturn(['status' => 200]);
 
-        $response = $this->client->typing(self::SCOPE_ID, $conversation, $sender);
+        $response = $this->client->typing(self::ACCOUNT_UID, $conversation, $sender);
         $this->assertInstanceOf(TypingResponse::class, $response);
     }
 
@@ -381,21 +382,22 @@ class AmoJoClientTest extends TestCase
         $message = (new TextMessage())->setRefUid('fbf3fe89-143a-43af-aaae-49fa1cece1d8');
 
         $this->gateway->expects($this->once())
-            ->method('request')
+            ->method(HttpMethod::POST_REQUEST)
             ->with(
-                'POST',
                 self::SCOPE_ID . ActionsType::REACT,
-                [
-                    'conversation_id' => '12259256265',
-                    'id'              => 'fbf3fe89-143a-43af-aaae-49fa1cece1d8',
-                    'user'            => ['id' => '3986893063'],
-                    'type'            => 'react',
-                    'emoji'           => '🍺'
-                ]
+                $this->equalTo(
+                    [
+                        'conversation_id' => '12259256265',
+                        'id'              => 'fbf3fe89-143a-43af-aaae-49fa1cece1d8',
+                        'user'            => ['id' => '3986893063'],
+                        'type'            => 'react',
+                        'emoji'           => '🍺'
+                    ]
+                )
             )
             ->willReturn(['status' => 200]);
 
-        $response = $this->client->react(self::SCOPE_ID, $conversation, $sender, $message, '🍺');
+        $response = $this->client->react(self::ACCOUNT_UID, $conversation, $sender, $message, '🍺');
         $this->assertInstanceOf(ReactResponse::class, $response);
     }
 

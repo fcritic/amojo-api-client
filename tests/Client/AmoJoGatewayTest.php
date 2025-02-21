@@ -65,7 +65,7 @@ class AmoJoGatewayTest extends TestCase
         // Устанавливаем мок-клиент через рефлексию
         $this->setMockClient($gateway, $client);
 
-        $result = $gateway->request('GET', '/test');
+        $result = $gateway->get('/test', []);
         $this->assertEquals(['key' => 'value'], $result);
     }
 
@@ -98,7 +98,7 @@ class AmoJoGatewayTest extends TestCase
         );
 
         $this->setMockClient($gateway, $client);
-        $gateway->request('GET', '/test');
+        $gateway->get('/test');
     }
 
     /**
@@ -137,7 +137,7 @@ class AmoJoGatewayTest extends TestCase
         );
 
         $this->setMockClient($gateway, $client);
-        $gateway->request('GET', '/test');
+        $gateway->get('/test');
     }
 
     /**
