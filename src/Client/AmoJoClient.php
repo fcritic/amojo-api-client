@@ -18,7 +18,6 @@ use AmoJo\Models\Channel;
 use AmoJo\Models\Conversation;
 use AmoJo\Models\Deliver;
 use AmoJo\Models\Payload;
-use AmoJo\Models\Scope;
 use AmoJo\Enum\ActionsType;
 use AmoJo\Enum\EventType;
 use AmoJo\Exception\AmoJoException;
@@ -61,7 +60,7 @@ class AmoJoClient
      */
     public function connect(string $accountUid, ?string $title = null, string $hookVersion = 'v2'): AbstractResponse
     {
-        $this->validateUuid($accountUid, 'accountUid');
+        $this->validateUuid($accountUid);
 
         $response = $this->gateway->post($this->channel->getUid() . ActionsType::CONNECT, [
             'account_id'       => $accountUid,
@@ -82,7 +81,7 @@ class AmoJoClient
      */
     public function disconnect(string $accountUid): AbstractResponse
     {
-        $this->validateUuid($accountUid, 'accountUid');
+        $this->validateUuid($accountUid);
 
         $response = $this->gateway->delete($this->channel->getUid() . ActionsType::DISCONNECT, [
             'account_id' => $accountUid,
@@ -127,7 +126,7 @@ class AmoJoClient
         }
 
         $response = $this->gateway->post(
-            Scope::create($this->channel->getUid(), $accountUid)->getScopeId() . ActionsType::CHAT,
+            $this->getScopeId($accountUid) . ActionsType::CHAT,
             $socialProfile
         );
 
@@ -157,10 +156,7 @@ class AmoJoClient
             $message['payload'] = array_merge($source, $message['payload']);
         }
 
-        $response = $this->gateway->post(
-            Scope::create($this->channel->getUid(), $accountUid)->getScopeId(),
-            $message
-        );
+        $response = $this->gateway->post($this->getScopeId($accountUid), $message);
 
         return ResponseFactory::create(ActionsType::MESSAGE, $response);
     }
@@ -175,7 +171,7 @@ class AmoJoClient
      */
     public function editMessage(string $accountUid, Payload $payload): AbstractResponse
     {
-        $response = $this->gateway->post(Scope::create($this->channel->getUid(), $accountUid)->getScopeId(), [
+        $response = $this->gateway->post($this->getScopeId($accountUid), [
             'event_type' => EventType::EDIT_MESSAGE,
             'payload'    => $payload->toApi(true),
         ]);
@@ -196,9 +192,7 @@ class AmoJoClient
      */
     public function deliverStatus(string $accountUid, string $messageUid, Deliver $deliver): AbstractResponse
     {
-        $uri =
-            Scope::create($this->channel->getUid(), $accountUid)->getScopeId()
-            . '/' . $messageUid . ActionsType::DELIVERY_STATUS;
+        $uri = $this->getScopeId($accountUid) . '/' . $messageUid . ActionsType::DELIVERY_STATUS;
 
         $response = $this->gateway->post($uri, $deliver->toApi($messageUid));
 
@@ -221,9 +215,7 @@ class AmoJoClient
      */
     public function getHistoryChat(string $accountUid, string $conversationRefId, array $query = []): AbstractResponse
     {
-        $uri =
-            Scope::create($this->channel->getUid(), $accountUid)->getScopeId()
-            . ActionsType::CHAT . '/' . $conversationRefId . ActionsType::GET_HISTORY;
+        $uri = $this->getScopeId($accountUid) . ActionsType::CHAT . '/' . $conversationRefId . ActionsType::GET_HISTORY;
 
         $response = $this->gateway->get($uri, $query);
 
@@ -241,13 +233,10 @@ class AmoJoClient
      */
     public function typing(string $accountUid, Conversation $conversation, SenderInterface $sender): AbstractResponse
     {
-        $response = $this->gateway->post(
-            Scope::create($this->channel->getUid(), $accountUid)->getScopeId() . ActionsType::TYPING,
-            [
-                'conversation_id' => $conversation->getId(),
-                'sender'          => $sender->toTyping()
-            ]
-        );
+        $response = $this->gateway->post($this->getScopeId($accountUid) . ActionsType::TYPING, [
+            'conversation_id' => $conversation->getId(),
+            'sender'          => $sender->toTyping()
+        ]);
 
         return ResponseFactory::create(ActionsType::TYPING, $response);
     }
@@ -272,30 +261,37 @@ class AmoJoClient
         string $emoji = null,
         bool $type = true
     ): AbstractResponse {
-        $response = $this->gateway->post(
-            Scope::create($this->channel->getUid(), $accountUid)->getScopeId() . ActionsType::REACT,
-            array_filter([
-                'conversation_id' => $conversation->getId(),
-                'id'              => $message->getRefUid(),
-                'msgid'           => $message->getUid(),
-                'user'            => $sender->toReact(),
-                'type'            => $type ? 'react' : 'unreact',
-                'emoji'           => $emoji
-            ])
-        );
+        $response = $this->gateway->post($this->getScopeId($accountUid) . ActionsType::REACT, array_filter([
+            'conversation_id' => $conversation->getId(),
+            'id'              => $message->getRefUid(),
+            'msgid'           => $message->getUid(),
+            'user'            => $sender->toReact(),
+            'type'            => $type ? 'react' : 'unreact',
+            'emoji'           => $emoji
+        ]));
 
         return ResponseFactory::create(ActionsType::REACT, $response);
     }
 
     /**
+     * @param string $accountUid
+     * @return string
+     */
+    private function getScopeId(string $accountUid): string
+    {
+        $this->validateUuid($accountUid);
+
+        return $this->channel->getUid() . '_' . $accountUid;
+    }
+
+    /**
      * @param string $value
-     * @param string $paramName
      * @return void
      */
-    private function validateUuid(string $value, string $paramName): void
+    private function validateUuid(string $value): void
     {
         if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $value)) {
-            throw new AmoJoException("Invalid UUID format for {$paramName}: {$value}");
+            throw new AmoJoException("Invalid UUID format for accountUid: {$value}");
         }
     }
 }
