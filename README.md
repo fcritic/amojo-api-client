@@ -110,7 +110,7 @@ $contact = (new Sender())
     ->setProfile((new UserProfile())->setPhone('+1464874556719'));
 
 $response = $client->createChat(
-    scopeId: 'f90ba33d...',  // amojo_id аккаунта _ id канала чатов
+    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     conversation: $conversation,
     contact: $contact
 );
@@ -128,7 +128,7 @@ use AmoJo\Models\Messages\TextMessage;
 $message = (new TextMessage())->setUid('MSG_100')->setText('Hello');
 
 $response = $client->sendMessage(
-    scopeId: 'f90ba33d...',
+    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     payload: (new Payload())
         ->setConversation($conversation)
         ->setSender($contact)
@@ -148,7 +148,7 @@ $sender = (new Sender())->setRefId('113de373-a2d3-4eb7-a67c-04660332df07');
 $message = (new TextMessage())->setUid('MSG_101')->setText('Hello');
 
 $response = $client->sendMessage(
-    scopeId: 'f90ba33d...',
+    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     payload: (new Payload())
         ->setConversation($conversation)
         ->setSender($sender)
@@ -163,7 +163,7 @@ $response = $client->sendMessage(
 $message = (new TextMessage())->setUid('MSG_101')->setText('Hello, Richard');
 
 $response = $client->editMessage(
-    scopeId: 'f90ba33d...',
+    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     (new Payload())
         ->setConversation($conversation)
         ->setMessage($message)
@@ -177,7 +177,7 @@ use AmoJo\Models\Messages\ReplyTo;
 $message = (new TextMessage())->setUid('MSG_102')->setText('I want to place an order');
 
 $response = $client->sendMessage(
-    scopeId: 'f90ba33d...',
+    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     payload: (new Payload())
         ->setConversation($conversation)
         ->setSender($contact)
@@ -192,7 +192,7 @@ $response = $client->sendMessage(
 ##### 1. История чата
 ```php
 $response = $client->getHistoryChat(
-    scopeId: 'f90ba33d...',
+    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     conversationRefId: $conversation->getRefId()
 );
 
@@ -208,7 +208,7 @@ use AmoJo\Enum\ErrorCode;
 use AmoJo\Models\Deliver;
 
 $response = $client->deliverStatus(
-    scopeId: 'f90ba33d...',
+    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     messageUid: $message->getRefUid(),
     deliver: (new Deliver(DeliveryStatus::ERROR))
         ->setErrorCode(ErrorCode::WITH_DESCRIPTION)
@@ -223,7 +223,7 @@ if ($response->getDelivery()) {
 ##### 3. Отправка или снятие реакции
 ```php
 $response = $client->react(
-    scopeId: 'f90ba33d...',
+    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     conversation: $conversation,
     sender: $contact,
     message: $message,
@@ -238,7 +238,7 @@ if ($response->getReact()) {
 ##### 4. Информации о печатание
 ```php
 $response = $client->typing(
-    scopeId: $scopeId,
+    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     conversation: $conversation,
     sender: $contact,
 );
