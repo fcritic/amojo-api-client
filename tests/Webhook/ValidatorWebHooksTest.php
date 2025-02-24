@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Helpers;
+namespace Tests\Webhook;
 
 use AmoJo\Exception\InvalidRequestWebHookException;
 use AmoJo\Webhook\ValidatorWebHooks;

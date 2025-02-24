@@ -103,43 +103,6 @@ final class HistoryChatResponse extends AbstractResponse
      */
     private function createMessage(array $messageData): MessageInterface
     {
-        $message = MessageFactory::create($messageData['message']['type']);
-
-        $message
-            ->setRefUid($messageData['message']['id'] ?? '')
-            ->setUid($messageData['message']['client_id'] ?? '')
-            ->setText($messageData['message']['text'] ?? '')
-            ->setTimestamp($messageData['timestamp'] ?? '')
-            ->setMsecTimestamp($messageData['msec_timestamp'] ?? '');
-
-        if (method_exists($message, 'setMedia')) {
-            $message->setMedia($messageData['message']['media'] ?? '');
-        }
-
-        if (method_exists($message, 'setFileName')) {
-            $message->setFileName($messageData['message']['file_name'] ?? '');
-        }
-
-        if (method_exists($message, 'setFileSize')) {
-            $message->setFileSize($messageData['message']['file_size'] ?? 0);
-        }
-
-        if ($message instanceof LocationMessage) {
-            $message
-                ->setLon($messageData['message']['location']['lon'] ?? 0)
-                ->setLat($messageData['message']['location']['lat'] ?? 0);
-        }
-
-        if ($message instanceof ContactMessage) {
-            $message
-                ->setName($messageData['message']['contact']['name'] ?? '')
-                ->setPhone($messageData['message']['contact']['phone'] ?? '');
-        }
-
-        if ($message instanceof StickerMessage) {
-            $message->setStickerId($messageData['message']['sticker']['id'] ?? '');
-        }
-
-        return $message;
+        return (new MessageFactory())->create($messageData);
     }
 }

@@ -21,6 +21,9 @@ abstract class AbstractMessage implements MessageInterface
     use MediaTrait;
     use ContentTrait;
 
+    /** @var string */
+    protected const TYPE = '';
+
     /** @var string|null */
     private ?string $uid = null;
 
@@ -167,6 +170,21 @@ abstract class AbstractMessage implements MessageInterface
         if ($this->uid === null) {
             throw new RequiredParametersMissingException('Required param uid message missing.');
         }
+    }
+
+    /**
+     * Для вебхука по реакции
+     *
+     * @return array
+     */
+    public function toArrayForWebHook(): array
+    {
+        return [
+            'id' => $this->getUid(),
+            'client_id' => $this->getRefUid(),
+            'timestamp' => $this->getTimestamp(),
+            'msec_timestamp' => $this->getMsecTimestamp(),
+        ];
     }
 
     /**

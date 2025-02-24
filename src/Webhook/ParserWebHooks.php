@@ -4,119 +4,137 @@ declare(strict_types=1);
 
 namespace AmoJo\Webhook;
 
-use AmoJo\Exception\InvalidRequestWebHookException;
-use AmoJo\Models\Conversation;
-use AmoJo\Models\Interfaces\MessageInterface;
-use AmoJo\Models\Interfaces\ReceiverInterface;
-use AmoJo\Models\Interfaces\SenderInterface;
+use AmoJo\Enum\WebHookType;
 use AmoJo\Models\Messages\MessageFactory;
-use AmoJo\Models\Payload;
+use AmoJo\Models\Messages\ReplyTo;
 use AmoJo\Models\Users\Receiver;
 use AmoJo\Models\Users\Sender;
-use AmoJo\Models\Users\ValueObject\UserProfile;
+use AmoJo\Exception\InvalidRequestWebHookException;
+use AmoJo\Webhook\Traits\ConversationParserTrait;
+use AmoJo\Webhook\Traits\UserParserTrait;
+use AmoJo\Webhook\Traits\ValidationTrait;
 
 class ParserWebHooks
 {
+    use UserParserTrait;
+    use ConversationParserTrait;
+    use ValidationTrait;
+
     /**
-     * @throws InvalidRequestWebHookException
+     * Принимает декодированный JSON вебхука и парсит его в зависимости от его типа
+     *
+     * @param array $data
+     * @return AbstractWebHookEvent
      */
-    public function parse(string $requestBody): Payload
+    public function parse(array $data): AbstractWebHookEvent
     {
-        $data = $this->parseJson($requestBody);
+        switch ($this->detectEventType($data)) {
+            case WebHookType::MESSAGE:
+                return $this->parseMessageEvent($data);
 
-        return $this->createPayload($data);
-    }
+            case WebHookType::REACTION:
+                return $this->parseReactionEvent($data);
 
-    private function parseJson(string $json): array
-    {
-        try {
-            return json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            throw new InvalidRequestWebHookException('Invalid JSON format');
+            case WebHookType::TYPING:
+                return $this->parseTypingEvent($data);
+
+            default:
+                throw new InvalidRequestWebHookException('Unknown webhook type');
         }
     }
 
-    private function createPayload(array $data): Payload
+    /**
+     * Оправляет тип вебхука и валидирует на обязательные свойства
+     *
+     * @param array $data
+     * @return string
+     */
+    private function detectEventType(array $data): string
     {
-        $messageData = $data['message'];
+        $types = [
+            WebHookType::MESSAGE => fn($d) => isset($d['message']),
+            WebHookType::REACTION => fn($d) => isset($d['action']['reaction']),
+            WebHookType::TYPING => fn($d) => isset($d['action']['typing'])
+        ];
 
-        return (new Payload())
-            ->setConversation($this->parseConversation($messageData['conversation']))
-            ->setSender($this->parseSender($messageData['sender']))
-            ->setReceiver($this->parseReceiver($messageData['receiver']))
-            ->setMessage($this->parseMessage($messageData['message']))
-            ->setReplyTo($this->parseReplyTo($messageData['message']));
-    }
-
-    private function parseConversation(array $data): Conversation
-    {
-        return (new Conversation())
-            ->setRefId($data['id'])
-            ->setId($data['client_id'] ?? null);
-    }
-
-    private function parseSender(array $data): SenderInterface
-    {
-        return (new Sender())
-            ->setRefId($data['id'])
-            ->setName($data['name']);
-    }
-
-    private function parseReceiver(array $data): ReceiverInterface
-    {
-        return (new Receiver())
-            ->setRefId($data['id'])
-            ->setId($data['client_id'] ?? null)
-            ->setName($data['name'])
-            ->setProfile(
-                (new UserProfile())
-                    ->setPhone($data['phone'] ?? '')
-                    ->setEmail($data['email'] ?? '')
-            );
-    }
-
-    private function parseMessage(array $data): MessageInterface
-    {
-        $message = MessageFactory::create($data['type']);
-
-        $message
-            ->setRefUid($data['id'])
-            ->setText($data['text'] ?? '')
-            ->setTimestamp($data['timestamp'])
-            ->setMsecTimestamp($data['msec_timestamp']);
-
-        $this->parseOptionalFields($message, $data);
-
-        return $message;
-    }
-
-    private function parseOptionalFields(MessageInterface $message, array $data): void
-    {
-        if (isset($data['media'])) {
-            $message->setMedia($data['media']);
+        foreach ($types as $type => $checker) {
+            if ($checker($data)) {
+                $this->validateStructure($data, $this->getValidationRules($type), "[{$type}] ");
+                return $type;
+            }
         }
 
-        if (isset($data['file_name'])) {
-            $message->setFileName($data['file_name']);
-        }
-
-        if (isset($data['file_size'])) {
-            $message->setFileSize((int)$data['file_size']);
-        }
-
-        if (isset($data['reply_to'])) {
-            $message->setReplyTo($this->parseReply($data['reply_to']));
-        }
+        throw new InvalidRequestWebHookException('Cannot detect webhook type');
     }
 
-    private function parseReply(array $data): ?MessageReply
+    /**
+     * Парсер исходящего сообщения
+     *
+     * @param array $data
+     * @return OutgoingMessageEvent
+     */
+    private function parseMessageEvent(array $data): OutgoingMessageEvent
     {
-        if (!isset($data['message'])) {
-            return null;
+        $msgData = $data['message']['message'];
+        $replyTo = null;
+
+        if (isset($msgData['reply_to'])) {
+            $replyTo = (new ReplyTo())
+                ->setReplyRefUid($msgData['reply_to']['message']['id'])
+                ->setReplyUid($msgData['reply_to']['message']['msgid']);
         }
 
-        return new MessageReply(
-            $this->parseMessage($data['message'])
+        return new OutgoingMessageEvent(
+            $data['account_id'],
+            $data['time'],
+            $this->parseUser($data['message']['receiver'], Receiver::class),
+            $this->parseUser($data['message']['sender'], Sender::class),
+            $data['message']['source']['external_id'] ?? null,
+            $this->parseConversation($data['message']['conversation']),
+            $data['message']['timestamp'],
+            $data['message']['msec_timestamp'],
+            (new MessageFactory())->create($data['message']),
+            $replyTo
+        );
+    }
+
+    /**
+     * Парсер реакции
+     *
+     * @param array $data
+     * @return ReactionEvent
+     */
+    private function parseReactionEvent(array $data): ReactionEvent
+    {
+        $reactionData = $data['action']['reaction'];
+
+        return new ReactionEvent(
+            $data['account_id'],
+            $data['time'],
+            (new MessageFactory())->create($reactionData),
+            $this->parseUser($reactionData['user'], Sender::class),
+            $this->parseConversation($reactionData['conversation']),
+            $reactionData['type'],
+            $reactionData['emoji'] ?? null
+        );
+    }
+
+    /**
+     * Парсер печатания
+     *
+     * @param array $data
+     * @return TypingEvent
+     */
+    private function parseTypingEvent(array $data): TypingEvent
+    {
+        $typingData = $data['action']['typing'];
+
+        return new TypingEvent(
+            $data['account_id'],
+            $data['time'],
+            $this->parseUser($typingData['user'], Sender::class),
+            $this->parseConversation($typingData['conversation']),
+            $data['action']['typing']['expired_at']
         );
     }
 }
