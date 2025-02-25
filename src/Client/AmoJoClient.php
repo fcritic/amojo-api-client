@@ -274,6 +274,16 @@ class AmoJoClient
     }
 
     /**
+     * Возвращает объект канала чатов
+     *
+     * @return Channel
+     */
+    public function getChannel(): Channel
+    {
+        return $this->channel;
+    }
+
+    /**
      * @param string $accountUid
      * @return string
      */
