@@ -9,6 +9,7 @@ use AmoJo\Exception\SenderException;
 use AmoJo\Models\Interfaces\MessageInterface;
 use AmoJo\Models\Interfaces\ReceiverInterface;
 use AmoJo\Models\Interfaces\SenderInterface;
+use AmoJo\Models\Interfaces\UserInterface;
 use AmoJo\Models\Messages\ReplyTo;
 
 use function array_filter;
@@ -58,7 +59,7 @@ class Payload
      * @param SenderInterface $sender
      * @return Payload
      */
-    public function setSender(SenderInterface $sender): self
+    public function setSender(UserInterface $sender): self
     {
         $this->sender = $sender;
         return $this;
@@ -70,7 +71,7 @@ class Payload
      * @param ReceiverInterface|null $receiver
      * @return Payload
      */
-    public function setReceiver(?ReceiverInterface $receiver): self
+    public function setReceiver(?UserInterface $receiver): self
     {
         $this->receiver = $receiver;
         return $this;

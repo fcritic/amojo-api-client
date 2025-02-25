@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace AmoJo\Webhook;
 
 use AmoJo\Enum\WebHookType;
+use AmoJo\Exception\UnsupportedMessageTypeException;
 use AmoJo\Models\Messages\MessageFactory;
 use AmoJo\Models\Messages\ReplyTo;
 use AmoJo\Models\Users\Receiver;
 use AmoJo\Models\Users\Sender;
-use AmoJo\Exception\InvalidRequestWebHookException;
 use AmoJo\Webhook\Traits\ConversationParserTrait;
 use AmoJo\Webhook\Traits\UserParserTrait;
 use AmoJo\Webhook\Traits\ValidationTrait;
@@ -39,7 +39,7 @@ class ParserWebHooks
                 return $this->parseTypingEvent($data);
 
             default:
-                throw new InvalidRequestWebHookException('Unknown webhook type');
+                throw new UnsupportedMessageTypeException('Unknown webhook type');
         }
     }
 
@@ -64,7 +64,7 @@ class ParserWebHooks
             }
         }
 
-        throw new InvalidRequestWebHookException('Cannot detect webhook type');
+        throw new UnsupportedMessageTypeException('Cannot detect webhook type');
     }
 
     /**

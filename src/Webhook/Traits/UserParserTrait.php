@@ -6,7 +6,6 @@ namespace AmoJo\Webhook\Traits;
 
 use AmoJo\Models\Interfaces\ReceiverInterface;
 use AmoJo\Models\Interfaces\UserInterface;
-use AmoJo\Models\Users\Receiver;
 use AmoJo\Models\Users\ValueObject\UserProfile;
 
 trait UserParserTrait
@@ -21,14 +20,14 @@ trait UserParserTrait
     protected function parseUser(array $data, string $class): UserInterface
     {
         $user = (new $class())
-            ->setRefId($data['id'])
+            ->setRefId($data['id'] ?? '')
             ->setName($data['name'] ?? '');
 
-        if ($user instanceof ReceiverInterface) {
-            if (isset($data['client_id'])) {
-                $user->setId($data['client_id']);
-            }
+        if (isset($data['client_id'])) {
+            $user->setId($data['client_id']);
+        }
 
+        if ($user instanceof ReceiverInterface) {
             $user->setProfile(
                 (new UserProfile())
                     ->setPhone($data['phone'] ?? '')
