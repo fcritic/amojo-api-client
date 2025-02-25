@@ -14,6 +14,7 @@ use AmoJo\Models\Messages\StickerMessage;
 use AmoJo\Models\Payload;
 use AmoJo\Models\Users\Receiver;
 use AmoJo\Models\Users\Sender;
+use AmoJo\Webhook\Traits\UserParserTrait;
 
 /**
  * DTO ответа при получении истории чата
@@ -22,6 +23,8 @@ use AmoJo\Models\Users\Sender;
  */
 final class HistoryChatResponse extends AbstractResponse
 {
+    use UserParserTrait;
+
     /** @var Payload[] массив с сообщениями */
     private array $messages = [];
 
@@ -55,44 +58,12 @@ final class HistoryChatResponse extends AbstractResponse
                     $this->createMessage($messageData)
                 )
                 ->setSender(
-                    $this->createSender($messageData['sender'])
+                    $this->parseUser($messageData['sender'], Sender::class)
                 )
                 ->setReceiver(
-                    $this->createReceiver($messageData['receiver'] ?? null)
+                    $this->parseUser($messageData['receiver'] ?? [], Receiver::class)
                 );
         }
-    }
-
-    /**
-     * Создания объекта отправителя для модели сообщения
-     *
-     * @param array $senderData
-     * @return SenderInterface
-     */
-    private function createSender(array $senderData): SenderInterface
-    {
-        return (new Sender())
-            ->setId($senderData['id'] ?? null)
-            ->setRefId($senderData['id'] ?? null)
-            ->setName($senderData['name'] ?? '');
-    }
-
-    /**
-     * Создания объекта получателя для модели сообщения, создается при наличии
-     *
-     * @param array|null $receiverData
-     * @return ReceiverInterface|null
-     */
-    private function createReceiver(?array $receiverData): ?ReceiverInterface
-    {
-        if (!$receiverData) {
-            return null;
-        }
-
-        return (new Receiver())
-            ->setId($receiverData['id'] ?? null)
-            ->setRefId($receiverData['client_id'] ?? null)
-            ->setName($receiverData['name'] ?? '');
     }
 
     /**

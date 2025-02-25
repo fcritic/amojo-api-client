@@ -345,6 +345,12 @@ class AmoJoClientTest extends TestCase
             $response->getMessages()[2]->getMessage()->getRefUid()
         );
         $this->assertEquals('1', $response->getMessages()[2]->getMessage()->getUid());
+        $this->assertEquals('Hello', $response->getMessages()[1]->getMessage()->getText());
+        $this->assertEquals(
+            '76c6e590-b9e7-4882-9dc7-b64a5ed4f6d6',
+            $response->getMessages()[1]->getSender()->getRefId()
+        );
+        $this->assertEquals('3986893063', $response->getMessages()[0]->getReceiver()->getId());
     }
 
     /**
