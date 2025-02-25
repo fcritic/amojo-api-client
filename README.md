@@ -29,7 +29,7 @@
   - [Дополнительные функции](#дополнительные-функции)
 - [🔌 Кастомные middleware](#-кастомные-middleware)
 - [📢 Обработка ошибок](#-обработка-ошибок)
-- [🔐 Работа с WebHooks](#-валидация-webhooks)
+- [🔐 Работа с WebHooks](#-работа-с-webhooks)
 - [📝 Документация](#-документация)
 - [📄 Лицензия](#-лицензия)
 
@@ -326,22 +326,14 @@ if (! ValidatorWebHooks::isValid(request: $request, secretKey: '465c28d756f...')
 ##### 2. Строгая типизация данных полученных из WebHooks amoCRM
 
 ```php
-use AmoJo\Webhook\OutgoingMessageEvent;
 use AmoJo\Webhook\ParserWebHooks;
+use AmoJo\Webhook\OutgoingMessageEvent;
+use AmoJo\Webhook\ReactionEvent;
+use AmoJo\Webhook\TypingEvent;
 
 $event = (new ParserWebHooks())->parse($requestBody);
         
-if ($event instanceof OutgoingMessageEvent) {
-    echo 'Получено исходящие сообщения из amoCRM: ' . $event->getMessage()->getText();
-}
-
-if ($event instanceof ReactionEvent) {
-    echo 'Установлена реакция ' . $event->getEmoji() . ' на сообщение ID ' . $event->getMessage()->getUid();
-}
-
-if ($event instanceof TypingEvent) {
-    echo 'Пользователь ' . $event->getInitiator()->getName() . ' печатает...';
-}
+var_dump($event->toArray());
 ```
 
 ---
