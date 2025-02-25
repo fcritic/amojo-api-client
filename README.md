@@ -56,7 +56,7 @@
 Установка через Composer:
 
 ```bash
-composer require fcritic/amojo-php-client
+composer require fcritic/amojo-api-client
 ```
 ### Требования:
 - PHP 7.4+
