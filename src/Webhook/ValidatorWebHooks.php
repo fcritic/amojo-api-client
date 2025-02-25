@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AmoJo\Helpers;
+namespace AmoJo\Webhook;
 
 use AmoJo\Enum\HeaderType;
 use AmoJo\Exception\InvalidRequestWebHookException;

@@ -66,6 +66,17 @@ class Conversation
     }
 
     /**
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->getId(),
+            'ref_id' => $this->getRefId(),
+        ];
+    }
+
+    /**
      * Валидация чата. При получении данных с объекта, он должен иметь хоть одно значения
      *
      * @return void
