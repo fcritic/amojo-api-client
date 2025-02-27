@@ -39,13 +39,13 @@ class AmoJoClient
 
     /**
      * @param Channel $channel
-     * @param array $additionalMiddleware массив с кастомными middleware implements \Middleware\MiddlewareInterface
+     * @param array $additionalMiddleware массив с кастомными middleware implements AmoJo\Middleware\MiddlewareInterface
      * @param string $segment ru | com
      */
     public function __construct(Channel $channel, array $additionalMiddleware = [], string $segment = 'ru')
     {
         $this->channel = $channel;
-        $this->gateway = new AmoJoGateway($channel, $additionalMiddleware, $segment);
+        $this->gateway = new AmoJoGateway($additionalMiddleware, $segment);
     }
 
     /**
@@ -62,10 +62,13 @@ class AmoJoClient
     {
         $this->validateUuid($accountUid);
 
-        $response = $this->gateway->post($this->channel->getUid() . ActionsType::CONNECT, [
-            'account_id'       => $accountUid,
-            'title'            => $title,
-            'hook_api_version' => $hookVersion,
+        $response = $this->gateway->post($this->getChannel()->getUid() . ActionsType::CONNECT, [
+            'secret_key' => $this->getChannel()->getSecretKey(),
+            'json' => [
+                'account_id' => $accountUid,
+                'title' => $title,
+                'hook_api_version' => $hookVersion,
+            ]
         ]);
 
         return ResponseFactory::create(ActionsType::CONNECT, $response);
@@ -83,8 +86,11 @@ class AmoJoClient
     {
         $this->validateUuid($accountUid);
 
-        $response = $this->gateway->delete($this->channel->getUid() . ActionsType::DISCONNECT, [
-            'account_id' => $accountUid,
+        $response = $this->gateway->delete($this->getChannel()->getUid() . ActionsType::DISCONNECT, [
+            'secret_key' => $this->getChannel()->getSecretKey(),
+            'json' => [
+                'account_id' => $accountUid
+            ]
         ]);
 
         return ResponseFactory::create(ActionsType::DISCONNECT, $response);
@@ -115,19 +121,23 @@ class AmoJoClient
             );
         }
 
-        $socialProfile = [
-            'conversation_id' => $conversation->getId(),
-            'source'          => ['external_id' => $externalId],
-            'user'            => $contact->toPayload(),
+        /** Социальный профиль контакта $options['json'] */
+        $options = [
+            'secret_key' => $this->getChannel()->getSecretKey(),
+            'json' => [
+                'conversation_id' => $conversation->getId(),
+                'source' => ['external_id' => $externalId],
+                'user' => $contact->toPayload(),
+            ]
         ];
 
         if ($externalId === null) {
-            unset($socialProfile['source']);
+            unset($options['json']['source']);
         }
 
         $response = $this->gateway->post(
             $this->getScopeId($accountUid) . ActionsType::CHAT,
-            $socialProfile
+            $options
         );
 
         return ResponseFactory::create(ActionsType::CHAT, $response);
@@ -147,13 +157,16 @@ class AmoJoClient
     public function sendMessage(string $accountUid, Payload $payload, ?string $externalId = null): AbstractResponse
     {
         $message = [
-            'event_type' => EventType::NEW_MESSAGE,
-            'payload'    => $payload->toApi(),
+            'secret_key' => $this->getChannel()->getSecretKey(),
+            'json' => [
+                'event_type' => EventType::NEW_MESSAGE,
+                'payload' => $payload->toApi(),
+            ]
         ];
 
         if ($externalId !== null) {
             $source = ['source' => ['external_id' => $externalId]];
-            $message['payload'] = array_merge($source, $message['payload']);
+            $message['json']['payload'] = array_merge($source, $message['json']['payload']);
         }
 
         $response = $this->gateway->post($this->getScopeId($accountUid), $message);
@@ -172,8 +185,11 @@ class AmoJoClient
     public function editMessage(string $accountUid, Payload $payload): AbstractResponse
     {
         $response = $this->gateway->post($this->getScopeId($accountUid), [
-            'event_type' => EventType::EDIT_MESSAGE,
-            'payload'    => $payload->toApi(true),
+            'secret_key' => $this->getChannel()->getSecretKey(),
+            'json' => [
+                'event_type' => EventType::EDIT_MESSAGE,
+                'payload' => $payload->toApi(true)
+            ]
         ]);
 
         return ResponseFactory::create(ActionsType::MESSAGE, $response);
@@ -194,7 +210,10 @@ class AmoJoClient
     {
         $uri = $this->getScopeId($accountUid) . '/' . $messageUid . ActionsType::DELIVERY_STATUS;
 
-        $response = $this->gateway->post($uri, $deliver->toApi($messageUid));
+        $response = $this->gateway->post($uri, [
+            'secret_key' => $this->getChannel()->getSecretKey(),
+            'json' => $deliver->toApi($messageUid)
+        ]);
 
         return ResponseFactory::create(ActionsType::DELIVERY_STATUS, $response);
     }
@@ -217,7 +236,10 @@ class AmoJoClient
     {
         $uri = $this->getScopeId($accountUid) . ActionsType::CHAT . '/' . $conversationRefId . ActionsType::GET_HISTORY;
 
-        $response = $this->gateway->get($uri, $query);
+        $response = $this->gateway->get($uri, [
+            'secret_key' => $this->getChannel()->getSecretKey(),
+            'query' => $query
+        ]);
 
         return ResponseFactory::create(ActionsType::GET_HISTORY, $response);
     }
@@ -234,8 +256,11 @@ class AmoJoClient
     public function typing(string $accountUid, Conversation $conversation, SenderInterface $sender): AbstractResponse
     {
         $response = $this->gateway->post($this->getScopeId($accountUid) . ActionsType::TYPING, [
-            'conversation_id' => $conversation->getId(),
-            'sender'          => $sender->toTyping()
+            'secret_key' => $this->getChannel()->getSecretKey(),
+            'json' => [
+                'conversation_id' => $conversation->getId(),
+                'sender' => $sender->toTyping()
+            ]
         ]);
 
         return ResponseFactory::create(ActionsType::TYPING, $response);
@@ -262,12 +287,15 @@ class AmoJoClient
         bool $type = true
     ): AbstractResponse {
         $response = $this->gateway->post($this->getScopeId($accountUid) . ActionsType::REACT, array_filter([
-            'conversation_id' => $conversation->getId(),
-            'id'              => $message->getRefUid(),
-            'msgid'           => $message->getUid(),
-            'user'            => $sender->toReact(),
-            'type'            => $type ? 'react' : 'unreact',
-            'emoji'           => $emoji
+            'secret_key' => $this->getChannel()->getSecretKey(),
+            'json' => array_filter([
+                'conversation_id' => $conversation->getId(),
+                'id' => $message->getRefUid(),
+                'msgid' => $message->getUid(),
+                'user' => $sender->toReact(),
+                'type' => $type ? 'react' : 'unreact',
+                'emoji' => $emoji
+            ])
         ]));
 
         return ResponseFactory::create(ActionsType::REACT, $response);
@@ -291,7 +319,7 @@ class AmoJoClient
     {
         $this->validateUuid($accountUid);
 
-        return $this->channel->getUid() . '_' . $accountUid;
+        return $this->getChannel()->getUid() . '_' . $accountUid;
     }
 
     /**

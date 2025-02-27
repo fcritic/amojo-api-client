@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AmoJo\Middleware;
 
 use AmoJo\Enum\HeaderType;
+use AmoJo\Exception\RequiredParametersMissingException;
 use Closure;
 use Psr\Http\Message\RequestInterface;
 
@@ -23,17 +24,6 @@ use Psr\Http\Message\RequestInterface;
  */
 final class SignatureMiddleware implements MiddlewareInterface
 {
-    /** @var string */
-    private string $secretKey;
-
-    /**
-     * @param string $secretKey
-     */
-    public function __construct(string $secretKey)
-    {
-        $this->secretKey = $secretKey;
-    }
-
     /**
      * @param callable $handler
      * @return Closure
@@ -43,7 +33,12 @@ final class SignatureMiddleware implements MiddlewareInterface
         /**
          * @return RequestInterface
          */
-        return function (RequestInterface $request, array $options) use ($handler) {
+        return static function (RequestInterface $request, array $options) use ($handler) {
+
+            /** Получаем секретный ключ из options передаваемый в запросе метода объекта AmoJoClient */
+            if (! isset($options['secret_key'])) {
+                throw new RequiredParametersMissingException('Secret key is required.');
+            }
 
             $str = implode("\n", [
                 strtoupper($request->getMethod()),
@@ -53,7 +48,7 @@ final class SignatureMiddleware implements MiddlewareInterface
                 $request->getUri()->getPath()
             ]);
 
-            $signature = strtolower(hash_hmac('sha1', $str, $this->secretKey));
+            $signature = strtolower(hash_hmac('sha1', $str, $options['secret_key']));
 
             /** @var RequestInterface $request */
             $request = $request->withHeader(HeaderType::SIGNATURE, $signature);
