@@ -53,14 +53,7 @@ class AmoJoGatewayTest extends TestCase
         $client = new Client(['handler' => $handler]);
 
         // Создаем объект как обычно
-        $gateway = new AmoJoGateway(
-            new Channel(
-                'f4afd704-a49b-4010-9311-06ef3d4ceed8',
-                '11c08dd7ba836ea9cfc03133b4813d'
-            ),
-            [],
-            'ru'
-        );
+        $gateway = new AmoJoGateway([], 'ru');
 
         // Устанавливаем мок-клиент через рефлексию
         $this->setMockClient($gateway, $client);
@@ -88,14 +81,7 @@ class AmoJoGatewayTest extends TestCase
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $gateway = new AmoJoGateway(
-            new Channel(
-                'f4afd704-a49b-4010-9311-06ef3d4ceed8',
-                '11c08dd7ba836ea9cfc03133b4813d'
-            ),
-            [],
-            'ru'
-        );
+        $gateway = new AmoJoGateway([], 'ru');
 
         $this->setMockClient($gateway, $client);
         $gateway->get('/test');
@@ -127,14 +113,7 @@ class AmoJoGatewayTest extends TestCase
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $gateway = new AmoJoGateway(
-            new Channel(
-                'f4afd704-a49b-4010-9311-06ef3d4ceed8',
-                '11c08dd7ba836ea9cfc03133b4813d'
-            ),
-            [],
-            'ru'
-        );
+        $gateway = new AmoJoGateway([], 'ru');
 
         $this->setMockClient($gateway, $client);
         $gateway->get('/test');
@@ -145,14 +124,7 @@ class AmoJoGatewayTest extends TestCase
      */
     public function testParserResponseWithEmptyBody(): void
     {
-        $gateway = new AmoJoGateway(
-            new Channel(
-                'f4afd704-a49b-4010-9311-06ef3d4ceed8',
-                '11c08dd7ba836ea9cfc03133b4813d'
-            ),
-            [],
-            'ru'
-        );
+        $gateway = new AmoJoGateway([], 'ru');
 
         $response = new Response(204);
         $result = $this->invokePrivateMethod($gateway, 'parserResponse', [$response]);
@@ -167,14 +139,7 @@ class AmoJoGatewayTest extends TestCase
     {
         $this->expectException(InvalidResponseException::class);
 
-        $gateway = new AmoJoGateway(
-            new Channel(
-                'f4afd704-a49b-4010-9311-06ef3d4ceed8',
-                '11c08dd7ba836ea9cfc03133b4813d'
-            ),
-            [],
-            'ru'
-        );
+        $gateway = new AmoJoGateway([], 'ru');
 
         $response = new Response(200, [], 'invalid-json');
         $this->invokePrivateMethod($gateway, 'parserResponse', [$response]);

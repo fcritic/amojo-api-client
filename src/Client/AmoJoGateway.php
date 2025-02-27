@@ -44,13 +44,12 @@ class AmoJoGateway implements ApiGatewayInterface
     protected ClientInterface $client;
 
     /**
-     * @param Channel $channel
      * @param array $additionalMiddleware массив с кастомными middleware implements \Middleware\MiddlewareInterface
      * @param string $segment ru | com
      */
-    public function __construct(Channel $channel, array $additionalMiddleware, string $segment)
+    public function __construct(array $additionalMiddleware, string $segment)
     {
-        $stack = $this->registerMiddleware($channel->getSecretKey(), $additionalMiddleware);
+        $stack = $this->registerMiddleware($additionalMiddleware);
 
         $this->client = new HttpClient([
             'base_uri' => self::HOST[$segment],
@@ -58,7 +57,7 @@ class AmoJoGateway implements ApiGatewayInterface
             'handler'  => $stack,
             'headers'  => [
                 HeaderType::CONTENT_TYPE => 'application/json',
-                HeaderType::USER_AGENT   => 'amoJo-PHP-Client/1.0',
+                HeaderType::USER_AGENT   => 'amoJo-PHP-Client/1.2.1',
             ]
         ]);
     }
@@ -66,14 +65,13 @@ class AmoJoGateway implements ApiGatewayInterface
     /**
      * Регистрация Middleware в клиента
      *
-     * @param string $secretKey Секретный ключ канала чатов. Выдается при регистрации канала
      * @param array<class-string<MiddlewareInterface>> $middlewares
      * @return HandlerStack
      */
-    private function registerMiddleware(string $secretKey, array $middlewares): HandlerStack
+    private function registerMiddleware(array $middlewares): HandlerStack
     {
         $stack = HandlerStack::create();
-        foreach (StackMiddleware::create($secretKey, $middlewares) as $middleware) {
+        foreach (StackMiddleware::create($middlewares) as $middleware) {
             $stack->push($middleware);
         }
 
@@ -85,9 +83,9 @@ class AmoJoGateway implements ApiGatewayInterface
      * @param array $query
      * @return array
      */
-    public function get(string $uri, array $query = []): array
+    public function get(string $uri, array $options = []): array
     {
-        return $this->executeRequest(HttpMethod::GET_REQUEST, $uri, ['query' => $query]);
+        return $this->executeRequest(HttpMethod::GET_REQUEST, $uri, $options);
     }
 
     /**
@@ -95,9 +93,9 @@ class AmoJoGateway implements ApiGatewayInterface
      * @param array $data
      * @return array
      */
-    public function post(string $uri, array $data = []): array
+    public function post(string $uri, array $options): array
     {
-        return $this->executeRequest(HttpMethod::POST_REQUEST, $uri, ['json' => $data]);
+        return $this->executeRequest(HttpMethod::POST_REQUEST, $uri, $options);
     }
 
     /**
@@ -105,9 +103,9 @@ class AmoJoGateway implements ApiGatewayInterface
      * @param array $data
      * @return array
      */
-    public function delete(string $uri, array $data = []): array
+    public function delete(string $uri, array $options): array
     {
-        return $this->executeRequest(HttpMethod::DELETE_REQUEST, $uri, ['json' => $data]);
+        return $this->executeRequest(HttpMethod::DELETE_REQUEST, $uri, $options);
     }
 
     /**

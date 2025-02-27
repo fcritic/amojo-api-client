@@ -13,19 +13,21 @@ final class StackMiddleware
     /**
      * Можно передать кастомную Middleware которая реализует интерфейс src/Middleware/MiddlewareInterface
      *
-     * @param string $secretKey
      * @param array<class-string<MiddlewareInterface>> $additionalMiddlewareClasses
      * @return MiddlewareInterface[]
      */
-    public static function create(string $secretKey, array $additionalMiddlewareClasses = []): array
+    public static function create(array $additionalMiddlewareClasses = []): array
     {
-        $core = [
-            new DateMiddleware(),
-            new ContentMD5Middleware(),
-            new SignatureMiddleware($secretKey),
+        $core = [];
+
+        /** @var array<class-string<MiddlewareInterface>> $stack */
+        $stack = [
+            DateMiddleware::class,
+            ContentMD5Middleware::class,
+            SignatureMiddleware::class,
         ];
 
-        foreach ($additionalMiddlewareClasses as $class) {
+        foreach (array_merge($additionalMiddlewareClasses, $stack) as $class) {
             $core[] = new $class();
         }
 

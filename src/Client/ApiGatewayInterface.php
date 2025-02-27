@@ -8,22 +8,22 @@ interface ApiGatewayInterface
 {
     /**
      * @param string $uri
-     * @param array $query
+     * @param array $options
      * @return array
      */
-    public function get(string $uri, array $query = []): array;
+    public function get(string $uri, array $options): array;
 
     /**
      * @param string $uri
-     * @param array $data
+     * @param array $options
      * @return array
      */
-    public function post(string $uri, array $data = []): array;
+    public function post(string $uri, array $options): array;
 
     /**
      * @param string $uri
-     * @param array $data
+     * @param array $options
      * @return array
      */
-    public function delete(string $uri, array $data = []): array;
+    public function delete(string $uri, array $options): array;
 }
