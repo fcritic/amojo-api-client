@@ -17,6 +17,7 @@ use AmoJo\DTO\TypingResponse;
 use AmoJo\Enum\ActionsType;
 use AmoJo\Enum\DeliveryStatus;
 use AmoJo\Enum\ErrorCode;
+use AmoJo\Enum\EventType;
 use AmoJo\Enum\HttpMethod;
 use AmoJo\Exception\AmoJoException;
 use AmoJo\Models\Channel;
@@ -88,19 +89,22 @@ class AmoJoClientTest extends TestCase
     public function testConnect(): void
     {
         $expectedResponse = [
-            'account_id'              => self::ACCOUNT_UID,
-            'scope_id'                => self::SCOPE_ID,
-            'title'                   => 'Test Channel',
-            'hook_api_version'        => 'v2',
+            'account_id' => self::ACCOUNT_UID,
+            'scope_id' => self::SCOPE_ID,
+            'title' => 'Test Channel',
+            'hook_api_version' => 'v2',
             'is_time_window_disabled' => true
         ];
 
         $this->gateway->expects($this->once())
             ->method(HttpMethod::POST_REQUEST)
             ->with(self::CHANNEL_UID . ActionsType::CONNECT, $this->equalTo([
-                'account_id'       => self::ACCOUNT_UID,
-                'title'            => null,
-                'hook_api_version' => 'v2'
+                'secret_key' => $this->client->getChannel()->getSecretKey(),
+                'json' => [
+                    'account_id' => self::ACCOUNT_UID,
+                    'title' => null,
+                    'hook_api_version' => 'v2'
+                ]
             ]))
             ->willReturn($expectedResponse);
 
@@ -122,7 +126,10 @@ class AmoJoClientTest extends TestCase
         $this->gateway->expects($this->once())
             ->method(HttpMethod::DELETE_REQUEST)
             ->with(self::CHANNEL_UID . ActionsType::DISCONNECT, $this->equalTo([
-                'account_id' => self::ACCOUNT_UID,
+                'secret_key' => $this->client->getChannel()->getSecretKey(),
+                'json' => [
+                    'account_id' => self::ACCOUNT_UID,
+                ]
             ]));
 
         $response = $this->client->disconnect(self::ACCOUNT_UID);
@@ -143,13 +150,13 @@ class AmoJoClientTest extends TestCase
         $phone = '79110001133';
 
         $expectedResponse = [
-            'id'   => $conversationRefId,
+            'id' => $conversationRefId,
             'user' => [
-                'id'        => $useNameRefId,
+                'id' => $useNameRefId,
                 'client_id' => $userId,
-                'name'      => $userName,
-                'avatar'    => $avatarUrl,
-                'phone'     => $phone,
+                'name' => $userName,
+                'avatar' => $avatarUrl,
+                'phone' => $phone,
             ]
         ];
 
@@ -159,13 +166,16 @@ class AmoJoClientTest extends TestCase
                 self::SCOPE_ID . ActionsType::CHAT,
                 $this->equalTo(
                     [
-                        'conversation_id' => $conversationId,
-                        'user'            => [
-                            'id'      => $userId,
-                            'name'    => $userName,
-                            'avatar'  => $avatarUrl,
-                            'profile' => [
-                                'phone' => $phone,
+                        'secret_key' => $this->client->getChannel()->getSecretKey(),
+                        'json' => [
+                            'conversation_id' => $conversationId,
+                            'user' => [
+                                'id' => $userId,
+                                'name' => $userName,
+                                'avatar' => $avatarUrl,
+                                'profile' => [
+                                    'phone' => $phone,
+                                ]
                             ]
                         ]
                     ]
@@ -192,6 +202,7 @@ class AmoJoClientTest extends TestCase
         $this->assertEquals($userId, $response->getUser()->getId());
         $this->assertEquals($userName, $response->getUser()->getName());
         $this->assertEquals($avatarUrl, $response->getUser()->getAvatar());
+        $this->assertEquals($avatarUrl, $response->getUser()->getAvatar());
         $this->assertEquals($phone, $response->getUser()->getProfile()->getPhone());
     }
 
@@ -206,10 +217,10 @@ class AmoJoClientTest extends TestCase
         $expectedResponse = [
             'new_message' => [
                 'conversation_id' => 'b52c987e-1ef0-4544-b4e7-6d2ba665f9e4',
-                'sender_id'       => 'cf46e2c9-51f8-45c6-ba07-5d95e0aa4990',
-                'receiver_id'     => '9320f3de-aa61-4d12-8cf8-39e91b347445',
-                'msgid'           => '3f2fdc80-2619-48d9-9c12-c1ea27cfdf6a',
-                'ref_id'          => 'msg-789'
+                'sender_id' => 'cf46e2c9-51f8-45c6-ba07-5d95e0aa4990',
+                'receiver_id' => '9320f3de-aa61-4d12-8cf8-39e91b347445',
+                'msgid' => '3f2fdc80-2619-48d9-9c12-c1ea27cfdf6a',
+                'ref_id' => 'msg-789'
             ]
         ];
 
@@ -217,10 +228,15 @@ class AmoJoClientTest extends TestCase
             ->method(HttpMethod::POST_REQUEST)
             ->with(
                 self::SCOPE_ID,
-                $this->callback(function ($data) use ($externalId) {
-                        return $data['event_type'] === 'new_message'
-                        && $data['payload']['source']['external_id'] === $externalId;
-                })
+                $this->equalTo([
+                    'secret_key' => $this->client->getChannel()->getSecretKey(),
+                    'json' => [
+                        'event_type' => EventType::NEW_MESSAGE,
+                        'payload' => array_merge($payload->toApi(), ['source' => [
+                            'external_id' => $externalId,
+                        ]]),
+                    ]
+                ])
             )
             ->willReturn($expectedResponse);
 
@@ -243,13 +259,14 @@ class AmoJoClientTest extends TestCase
             ->method(HttpMethod::POST_REQUEST)
             ->with(
                 self::SCOPE_ID . '/' . $messageUid . ActionsType::DELIVERY_STATUS,
-                $this->equalTo(
-                    [
-                        'msgid'           => $messageUid,
+                $this->equalTo([
+                    'secret_key' => $this->client->getChannel()->getSecretKey(),
+                    'json' => [
+                        'msgid' => $messageUid,
                         'delivery_status' => DeliveryStatus::ERROR,
-                        'error_code'      => ErrorCode::CONVERSATION_CREATION_FAILED
+                        'error_code' => ErrorCode::CONVERSATION_CREATION_FAILED
                     ]
-                )
+                ])
             )
             ->willReturn(['status' => 200]);
 
@@ -268,60 +285,60 @@ class AmoJoClientTest extends TestCase
         $expectedResponse = [
             'messages' => [
                 [
-                    'timestamp'      => 1738864454,
+                    'timestamp' => 1738864454,
                     'msec_timestamp' => 1738864454584,
-                    'sender'         => [
-                        'id'   => '76c6e590-b9e7-4882-9dc7-b64a5ed4f6d6',
+                    'sender' => [
+                        'id' => '76c6e590-b9e7-4882-9dc7-b64a5ed4f6d6',
                         'name' => 'Пользователь amoCRM'
                     ],
-                    'receiver'       => [
-                        'id'        => '9320f3de-aa61-4d12-8cf8-39e91b347445',
+                    'receiver' => [
+                        'id' => '9320f3de-aa61-4d12-8cf8-39e91b347445',
                         'client_id' => '3986893063'
                     ],
-                    'message'        => [
-                        'id'        => 'fbf3fe89-143a-43af-aaae-49fa1cece1d8',
-                        'type'      => 'text',
-                        'text'      => 'How are you?',
-                        'media'     => '',
+                    'message' => [
+                        'id' => 'fbf3fe89-143a-43af-aaae-49fa1cece1d8',
+                        'type' => 'text',
+                        'text' => 'How are you?',
+                        'media' => '',
                         'thumbnail' => '',
                         'file_name' => '',
                         'file_size' => 0
                     ]
                 ],
                 [
-                    'timestamp'      => 1738861384,
+                    'timestamp' => 1738861384,
                     'msec_timestamp' => 1738861384982,
-                    'sender'         => [
-                        'id'   => '76c6e590-b9e7-4882-9dc7-b64a5ed4f6d6',
+                    'sender' => [
+                        'id' => '76c6e590-b9e7-4882-9dc7-b64a5ed4f6d6',
                         'name' => 'Пользователь amoCRM'
                     ],
-                    'receiver'       => [
-                        'id'        => '9320f3de-aa61-4d12-8cf8-39e91b347445',
+                    'receiver' => [
+                        'id' => '9320f3de-aa61-4d12-8cf8-39e91b347445',
                         'client_id' => '3986893063'
                     ],
-                    'message'        => [
-                        'id'        => '0c96aa74-4f9c-4950-ad1e-0644c8430c7e',
-                        'type'      => 'text',
-                        'text'      => 'Hello',
-                        'media'     => '',
+                    'message' => [
+                        'id' => '0c96aa74-4f9c-4950-ad1e-0644c8430c7e',
+                        'type' => 'text',
+                        'text' => 'Hello',
+                        'media' => '',
                         'thumbnail' => '',
                         'file_name' => '',
                         'file_size' => 0
                     ]
                 ],
                 [
-                    'timestamp'      => 1738861350,
+                    'timestamp' => 1738861350,
                     'msec_timestamp' => 1738861350000,
-                    'sender'         => [
-                        'id'        => '9320f3de-aa61-4d12-8cf8-39e91b347445',
+                    'sender' => [
+                        'id' => '9320f3de-aa61-4d12-8cf8-39e91b347445',
                         'client_id' => '3986893063'
                     ],
-                    'message'        => [
-                        'id'        => '53da915d-32a0-4b8a-891d-da331b51cfc0',
+                    'message' => [
+                        'id' => '53da915d-32a0-4b8a-891d-da331b51cfc0',
                         'client_id' => '1',
-                        'type'      => 'text',
-                        'text'      => 'Hello',
-                        'media'     => '',
+                        'type' => 'text',
+                        'text' => 'Hello',
+                        'media' => '',
                         'thumbnail' => '',
                         'file_name' => '',
                         'file_size' => 0
@@ -334,7 +351,10 @@ class AmoJoClientTest extends TestCase
             ->method(HttpMethod::GET_REQUEST)
             ->with(
                 self::SCOPE_ID . ActionsType::CHAT . '/' . $conversationRefId . ActionsType::GET_HISTORY,
-                $query
+                [
+                    'secret_key' => $this->client->getChannel()->getSecretKey(),
+                    'query' => $query
+                ]
             )
             ->willReturn($expectedResponse);
 
@@ -367,8 +387,11 @@ class AmoJoClientTest extends TestCase
                 self::SCOPE_ID . ActionsType::TYPING,
                 $this->equalTo(
                     [
-                        'conversation_id' => '12259256265',
-                        'sender' => ['id' => '3986893063']
+                        'secret_key' => $this->client->getChannel()->getSecretKey(),
+                        'json' => [
+                            'conversation_id' => '12259256265',
+                            'sender' => ['id' => '3986893063']
+                        ]
                     ]
                 )
             )
@@ -393,11 +416,14 @@ class AmoJoClientTest extends TestCase
                 self::SCOPE_ID . ActionsType::REACT,
                 $this->equalTo(
                     [
-                        'conversation_id' => '12259256265',
-                        'id'              => 'fbf3fe89-143a-43af-aaae-49fa1cece1d8',
-                        'user'            => ['id' => '3986893063'],
-                        'type'            => 'react',
-                        'emoji'           => '🍺'
+                        'secret_key' => $this->client->getChannel()->getSecretKey(),
+                        'json' => [
+                            'conversation_id' => '12259256265',
+                            'id' => 'fbf3fe89-143a-43af-aaae-49fa1cece1d8',
+                            'user' => ['id' => '3986893063'],
+                            'type' => 'react',
+                            'emoji' => '🍺'
+                        ]
                     ]
                 )
             )
