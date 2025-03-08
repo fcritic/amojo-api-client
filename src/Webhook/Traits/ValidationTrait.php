@@ -44,28 +44,32 @@ trait ValidationTrait
     {
         static $rules = [
             WebHookType::MESSAGE => [
-                    'account_id',
-                    'message.conversation.id',
-                    'message.sender.id',
-                    'message.receiver.id',
-                    'message.message.id',
-                    'message.message.type',
-                    'message.timestamp'
-                ],
+                'account_id',
+                'time',
+                'message.sender.id',
+                'message.receiver.id',
+                'message.conversation.id',
+                'message.timestamp',
+                'message.msec_timestamp',
+                'message.message.id',
+                'message.message.type',
+            ],
             WebHookType::REACTION => [
-                    'account_id',
-                    'action.reaction.msgid',
-                    'action.reaction.user.id',
-                    'action.reaction.conversation.id',
-                    'action.reaction.type'
-                ],
+                'account_id',
+                'time',
+                'action.reaction.msgid',
+                'action.reaction.user.id',
+                'action.reaction.conversation.id',
+                'action.reaction.type',
+            ],
             WebHookType::TYPING =>  [
-                    'account_id',
-                    'action.typing.expired_at',
-                    'action.typing.user.id',
-                    'action.typing.conversation.id'
-                ],
-            ];
+                'account_id',
+                'time',
+                'action.typing.user.id',
+                'action.typing.conversation.id',
+                'action.typing.expired_at',
+            ],
+        ];
 
         return $rules[$type] ?? [];
     }

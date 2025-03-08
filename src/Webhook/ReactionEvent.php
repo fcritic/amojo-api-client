@@ -22,8 +22,8 @@ final class ReactionEvent extends AbstractWebHookEvent
     /** @var string */
     protected string $reactionType;
 
-    /** @var string */
-    protected string $emoji;
+    /** @var string|null */
+    protected ?string $emoji;
 
     /**
      * @param string $accountUid
@@ -32,7 +32,7 @@ final class ReactionEvent extends AbstractWebHookEvent
      * @param UserInterface $user
      * @param Conversation $conversation
      * @param string $reactionType
-     * @param string $emoji
+     * @param string|null $emoji
      */
     public function __construct(
         string $accountUid,
@@ -41,7 +41,7 @@ final class ReactionEvent extends AbstractWebHookEvent
         UserInterface $user,
         Conversation $conversation,
         string $reactionType,
-        string $emoji
+        ?string $emoji
     ) {
         parent::__construct($accountUid, $time, $user, $conversation);
 
