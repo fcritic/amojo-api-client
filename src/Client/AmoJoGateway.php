@@ -11,7 +11,6 @@ use AmoJo\Exception\InvalidResponseException;
 use AmoJo\Exception\NotFountException;
 use AmoJo\Middleware\StackMiddleware;
 use AmoJo\Middleware\MiddlewareInterface;
-use AmoJo\Models\Channel;
 use Exception;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
