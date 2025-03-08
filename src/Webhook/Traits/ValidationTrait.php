@@ -10,8 +10,10 @@ use AmoJo\Exception\InvalidRequestWebHookException;
 trait ValidationTrait
 {
     /**
-     * Валидация вебхука на обязательные параметры
-     *
+     * Валидация вебхука на обязательные параметры. Использование
+     * ``
+     * $this->validateStructure({вебхук}, $this->getValidationRules($type), "[{$type}]");
+     *``
      * @param array $data
      * @param array $requiredFields
      * @param string $errorPrefix

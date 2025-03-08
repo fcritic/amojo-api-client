@@ -49,17 +49,16 @@ class ParserWebHooks
      * @param array $data
      * @return string
      */
-    private function detectEventType(array $data): string
+    public function detectEventType(array $data): string
     {
         $types = [
-            WebHookType::MESSAGE => fn($d) => isset($d['message']),
+            WebHookType::MESSAGE  => fn($d) => isset($d['message']),
             WebHookType::REACTION => fn($d) => isset($d['action']['reaction']),
-            WebHookType::TYPING => fn($d) => isset($d['action']['typing'])
+            WebHookType::TYPING   => fn($d) => isset($d['action']['typing'])
         ];
 
         foreach ($types as $type => $checker) {
             if ($checker($data)) {
-                $this->validateStructure($data, $this->getValidationRules($type), "[{$type}] ");
                 return $type;
             }
         }
