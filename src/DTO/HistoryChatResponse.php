@@ -5,12 +5,7 @@ declare(strict_types=1);
 namespace AmoJo\DTO;
 
 use AmoJo\Models\Interfaces\MessageInterface;
-use AmoJo\Models\Interfaces\ReceiverInterface;
-use AmoJo\Models\Interfaces\SenderInterface;
-use AmoJo\Models\Messages\ContactMessage;
-use AmoJo\Models\Messages\LocationMessage;
 use AmoJo\Models\Messages\MessageFactory;
-use AmoJo\Models\Messages\StickerMessage;
 use AmoJo\Models\Payload;
 use AmoJo\Models\Users\Receiver;
 use AmoJo\Models\Users\Sender;
