@@ -12,13 +12,11 @@ use AmoJo\Models\Users\Receiver;
 use AmoJo\Models\Users\Sender;
 use AmoJo\Webhook\Traits\ConversationParserTrait;
 use AmoJo\Webhook\Traits\UserParserTrait;
-use AmoJo\Webhook\Traits\ValidationTrait;
 
 class ParserWebHooks
 {
     use UserParserTrait;
     use ConversationParserTrait;
-    use ValidationTrait;
 
     /**
      * Принимает декодированный JSON вебхука и парсит его в зависимости от его типа
@@ -44,24 +42,23 @@ class ParserWebHooks
     }
 
     /**
-     * Оправляет тип вебхука и валидирует на обязательные свойства
+     * Возвращает тип вебхука
      *
      * @param array $data
      * @return string
      */
     private function detectEventType(array $data): string
     {
-        $types = [
-            WebHookType::MESSAGE => fn($d) => isset($d['message']),
-            WebHookType::REACTION => fn($d) => isset($d['action']['reaction']),
-            WebHookType::TYPING => fn($d) => isset($d['action']['typing'])
-        ];
+        if (isset($data['message'])) {
+            return WebHookType::MESSAGE;
+        }
 
-        foreach ($types as $type => $checker) {
-            if ($checker($data)) {
-                $this->validateStructure($data, $this->getValidationRules($type), "[{$type}] ");
-                return $type;
-            }
+        if (isset($data['action']['reaction'])) {
+            return WebHookType::REACTION;
+        }
+
+        if (isset($data['action']['typing'])) {
+            return WebHookType::TYPING;
         }
 
         throw new UnsupportedMessageTypeException('Cannot detect webhook type');

@@ -19,12 +19,18 @@ trait ValidationTrait
      */
     protected function validateStructure(array $data, array $requiredFields, string $errorPrefix = ''): void
     {
+        $missing = []; // Собираем все ошибки
+
         foreach ($requiredFields as $field) {
             if (!$this->hasField($data, $field)) {
-                throw new InvalidRequestWebHookException(
-                    "{$errorPrefix} Missing required field: {$field}"
-                );
+                $missing[] = $field;
             }
+        }
+
+        if (!empty($missing)) {
+            throw new InvalidRequestWebHookException(
+                $errorPrefix . " Missing fields: " . implode(', ', $missing)
+            );
         }
     }
 
@@ -36,9 +42,8 @@ trait ValidationTrait
      */
     private function getValidationRules(string $type): array
     {
-        switch ($type) {
-            case WebHookType::MESSAGE:
-                return [
+        static $rules = [
+            WebHookType::MESSAGE => [
                     'account_id',
                     'message.conversation.id',
                     'message.sender.id',
@@ -46,25 +51,23 @@ trait ValidationTrait
                     'message.message.id',
                     'message.message.type',
                     'message.timestamp'
-                ];
-            case WebHookType::REACTION:
-                return [
+                ],
+            WebHookType::REACTION => [
                     'account_id',
                     'action.reaction.msgid',
                     'action.reaction.user.id',
                     'action.reaction.conversation.id',
                     'action.reaction.type'
-                ];
-            case WebHookType::TYPING:
-                return [
+                ],
+            WebHookType::TYPING =>  [
                     'account_id',
                     'action.typing.expired_at',
                     'action.typing.user.id',
                     'action.typing.conversation.id'
-                ];
-            default:
-                return [];
-        }
+                ],
+            ];
+
+        return $rules[$type] ?? [];
     }
 
     /**
@@ -74,12 +77,24 @@ trait ValidationTrait
      */
     private function hasField(array $data, string $field): bool
     {
-        $keys = explode('.', $field);
-        foreach ($keys as $key) {
-            if (!array_key_exists($key, $data)) {
+        // Статический кэш для хранения разбитых путей
+        static $pathCache = [];
+
+        // Если путь не закэширован — разбиваем и сохраняем
+        if (!isset($pathCache[$field])) {
+            $pathCache[$field] = explode('.', $field);
+        }
+
+        // Работаем с исходными данными через ссылку
+        $current = &$data;
+
+        // Итерация по закэшированному пути
+        foreach ($pathCache[$field] as $key) {
+            if (!isset($current[$key])) {
                 return false;
             }
-            $data = $data[$key];
+            // Перемещаемся вглубь массива по ссылке
+            $current = &$current[$key];
         }
         return true;
     }
