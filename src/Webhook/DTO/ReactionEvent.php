@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AmoJo\Webhook;
+namespace AmoJo\Webhook\DTO;
 
 use AmoJo\Enum\WebHookType;
 use AmoJo\Models\Conversation;
@@ -23,7 +23,7 @@ final class ReactionEvent extends AbstractWebHookEvent
     protected string $reactionType;
 
     /** @var string|null */
-    protected ?string $emoji;
+    protected ?string $emoji = null;
 
     /**
      * @param string $accountUid
@@ -77,7 +77,7 @@ final class ReactionEvent extends AbstractWebHookEvent
     /**
      * @return string|null
      */
-    public function getEmoji(): string
+    public function getEmoji(): ?string
     {
         return $this->emoji;
     }

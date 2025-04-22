@@ -327,9 +327,6 @@ if (! ValidatorWebHooks::isValid(request: $request, secretKey: '465c28d756f...')
 
 ```php
 use AmoJo\Webhook\ParserWebHooks;
-use AmoJo\Webhook\OutgoingMessageEvent;
-use AmoJo\Webhook\ReactionEvent;
-use AmoJo\Webhook\TypingEvent;
 
 $event = (new ParserWebHooks())->parse($requestBody);
         

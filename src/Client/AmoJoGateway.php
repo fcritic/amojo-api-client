@@ -56,7 +56,7 @@ class AmoJoGateway implements ApiGatewayInterface
             'handler'  => $stack,
             'headers'  => [
                 HeaderType::CONTENT_TYPE => 'application/json',
-                HeaderType::USER_AGENT   => 'amoJo-PHP-Client/1.2.1',
+                HeaderType::USER_AGENT   => 'amoJo-PHP-Client/1.3.0',
             ]
         ]);
     }
