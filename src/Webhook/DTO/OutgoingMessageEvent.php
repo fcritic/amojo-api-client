@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AmoJo\Webhook;
+namespace AmoJo\Webhook\DTO;
 
 use AmoJo\Enum\WebHookType;
 use AmoJo\Models\Conversation;

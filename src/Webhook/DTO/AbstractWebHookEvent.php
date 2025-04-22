@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AmoJo\Webhook;
+namespace AmoJo\Webhook\DTO;
 
 use AmoJo\Models\Conversation;
 use AmoJo\Models\Interfaces\UserInterface;
 
-abstract class AbstractWebHookEvent
+abstract class AbstractWebHookEvent implements DtoInterface
 {
     /** @var string */
     protected string $accountUid;

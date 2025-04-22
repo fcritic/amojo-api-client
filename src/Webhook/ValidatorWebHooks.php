@@ -29,9 +29,9 @@ final class ValidatorWebHooks
 
             $receivedSignature = $request->getHeaderLine(HeaderType::SIGNATURE);
 
-            return $signature === $receivedSignature;
+            return hash_equals($signature, $receivedSignature);
         } catch (\Exception $e) {
-            throw new InvalidRequestWebHookException('Invalid webhook signature. Details: ' . $e->getMessage());
+            throw new InvalidRequestWebHookException('Invalid signature. Details: ' . $e->getMessage());
         }
     }
 }

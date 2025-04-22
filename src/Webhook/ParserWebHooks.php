@@ -10,6 +10,11 @@ use AmoJo\Models\Messages\MessageFactory;
 use AmoJo\Models\Messages\ReplyTo;
 use AmoJo\Models\Users\Receiver;
 use AmoJo\Models\Users\Sender;
+use AmoJo\Webhook\DTO\AbstractWebHookEvent;
+use AmoJo\Webhook\DTO\DtoInterface;
+use AmoJo\Webhook\DTO\OutgoingMessageEvent;
+use AmoJo\Webhook\DTO\ReactionEvent;
+use AmoJo\Webhook\DTO\TypingEvent;
 use AmoJo\Webhook\Traits\ConversationParserTrait;
 use AmoJo\Webhook\Traits\UserParserTrait;
 
@@ -24,7 +29,7 @@ class ParserWebHooks
      * @param array $data
      * @return AbstractWebHookEvent
      */
-    public function parse(array $data): AbstractWebHookEvent
+    public function parse(array $data): DtoInterface
     {
         switch ($this->detectEventType($data)) {
             case WebHookType::MESSAGE:

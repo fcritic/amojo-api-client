@@ -14,7 +14,7 @@ use AmoJo\Models\Interfaces\MessageInterface;
 class MessageFactory
 {
     /** @var string[] */
-    private const TYPE_MAPPING = [
+    public const TYPE_MAPPING = [
         MessageType::TEXT     => TextMessage::class,
         MessageType::CONTACT  => ContactMessage::class,
         MessageType::FILE     => FileMessage::class,
