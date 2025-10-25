@@ -18,10 +18,6 @@ use Psr\Http\Message\RequestInterface;
  */
 final class DateMiddleware implements MiddlewareInterface
 {
-    /**
-     * @param callable $handler
-     * @return Closure
-     */
     public function __invoke(callable $handler): Closure
     {
         /**

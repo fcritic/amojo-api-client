@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Client;
 
-use AmoJo\Client\AmoJoGateway;
+use AmoJo\Client\AmoJoHttpClient;
 use AmoJo\Exception\AmoJoException;
 use AmoJo\Exception\InvalidResponseException;
 use AmoJo\Exception\NotFountException;
-use AmoJo\Models\Channel;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Handler\MockHandler;
@@ -21,28 +20,16 @@ use Psr\Http\Client\ClientInterface;
 use ReflectionClass;
 use ReflectionException;
 
-/**
- * @extends TestCase
- */
-class AmoJoGatewayTest extends TestCase
+class AmoJoHttpClientTest extends TestCase
 {
-    /**
-     * @param AmoJoGateway $gateway
-     * @param ClientInterface $client
-     * @return void
-     */
-    private function setMockClient(AmoJoGateway $gateway, ClientInterface $client): void
+    private function setMockClient(AmoJoHttpClient $httpClient, ClientInterface $client): void
     {
-        $reflector = new ReflectionClass($gateway);
+        $reflector = new ReflectionClass($httpClient);
         $property = $reflector->getProperty('client');
         $property->setAccessible(true);
-        $property->setValue($gateway, $client);
+        $property->setValue($httpClient, $client);
     }
 
-    /**
-     * @return void
-     * @throws JsonException
-     */
     public function testRequestSuccessfullyParsesResponse(): void
     {
         $mock = new MockHandler([
@@ -53,18 +40,15 @@ class AmoJoGatewayTest extends TestCase
         $client = new Client(['handler' => $handler]);
 
         // Создаем объект как обычно
-        $gateway = new AmoJoGateway([], 'ru');
+        $httpClient = new AmoJoHttpClient([], 'ru');
 
         // Устанавливаем мок-клиент через рефлексию
-        $this->setMockClient($gateway, $client);
+        $this->setMockClient($httpClient, $client);
 
-        $result = $gateway->get('/test', []);
+        $result = $httpClient->get('/test', []);
         $this->assertEquals(['key' => 'value'], $result);
     }
 
-    /**
-     * @return void
-     */
     public function testRequestHandlesClientExceptionWithEmptyBody(): void
     {
         $this->expectException(NotFountException::class);
@@ -81,16 +65,12 @@ class AmoJoGatewayTest extends TestCase
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $gateway = new AmoJoGateway([], 'ru');
+        $httpClient = new AmoJoHttpClient([], 'ru');
 
-        $this->setMockClient($gateway, $client);
-        $gateway->get('/test');
+        $this->setMockClient($httpClient, $client);
+        $httpClient->get('/test');
     }
 
-    /**
-     * @return void
-     * @throws JsonException
-     */
     public function testRequestHandlesClientExceptionWithErrorBody(): void
     {
         $this->expectException(AmoJoException::class);
@@ -113,44 +93,32 @@ class AmoJoGatewayTest extends TestCase
         $handler = HandlerStack::create($mock);
         $client = new Client(['handler' => $handler]);
 
-        $gateway = new AmoJoGateway([], 'ru');
+        $httpClient = new AmoJoHttpClient([], 'ru');
 
-        $this->setMockClient($gateway, $client);
-        $gateway->get('/test');
+        $this->setMockClient($httpClient, $client);
+        $httpClient->get('/test');
     }
 
-    /**
-     * @return void
-     */
     public function testParserResponseWithEmptyBody(): void
     {
-        $gateway = new AmoJoGateway([], 'ru');
+        $httpClient = new AmoJoHttpClient([], 'ru');
 
         $response = new Response(204);
-        $result = $this->invokePrivateMethod($gateway, 'parserResponse', [$response]);
+        $result = $this->invokePrivateMethod($httpClient, 'parserResponse', [$response]);
 
-        $this->assertEquals(['status' => 204], $result);
+        $this->assertEquals([], $result);
     }
 
-    /**
-     * @return void
-     */
     public function testParserResponseThrowsOnInvalidJson(): void
     {
         $this->expectException(InvalidResponseException::class);
 
-        $gateway = new AmoJoGateway([], 'ru');
+        $httpClient = new AmoJoHttpClient([], 'ru');
 
         $response = new Response(200, [], 'invalid-json');
-        $this->invokePrivateMethod($gateway, 'parserResponse', [$response]);
+        $this->invokePrivateMethod($httpClient, 'parserResponse', [$response]);
     }
 
-    /**
-     * @param $object
-     * @param string $methodName
-     * @param array $parameters
-     * @return object|mixed
-     */
     private function invokePrivateMethod($object, string $methodName, array $parameters = [])
     {
         try {

@@ -7,84 +7,54 @@ namespace AmoJo\Webhook\DTO;
 use AmoJo\Models\Conversation;
 use AmoJo\Models\Interfaces\UserInterface;
 
-abstract class AbstractWebHookEvent implements DtoInterface
+abstract class AbstractAmoJoHook implements AmoJoHookInterface
 {
-    /** @var string */
-    protected string $accountUid;
-
-    /** @var int */
+    protected string $accountUuid;
     protected int $time;
-
-    /** @var Conversation */
     protected Conversation $conversation;
-
-    /** @var UserInterface */
     protected UserInterface $initiator;
 
-    /**
-     * @param string $accountUid
-     * @param int $time
-     * @param UserInterface $initiator
-     * @param Conversation $conversation
-     */
     public function __construct(
-        string $accountUid,
+        string $accountUuid,
         int $time,
         UserInterface $initiator,
         Conversation $conversation
     ) {
-        $this->accountUid = $accountUid;
+        $this->accountUuid = $accountUuid;
         $this->time = $time;
         $this->initiator = $initiator;
         $this->conversation = $conversation;
     }
 
-    /**
-     * @return string
-     */
     abstract public function getType(): string;
 
-    /**
-     * @return Conversation
-     */
     public function getConversation(): Conversation
     {
         return $this->conversation;
     }
 
-    /**
-     * @return string
-     */
-    public function getAccountUid(): string
+    public function getAccountUuid(): string
     {
-        return $this->accountUid;
+        return $this->accountUuid;
     }
 
     /**
      * Возвращает юзера. Для вебхука типа: печатает, реакция
-     *
-     * @return UserInterface
      */
     public function getInitiator(): UserInterface
     {
         return $this->initiator;
     }
 
-    /**
-     * @return int
-     */
     public function getTime(): int
     {
         return $this->time;
     }
 
-    /**
-     * @return array
-     */
     public function toArray(): array
     {
         return [
-            'accountUid' => $this->getAccountUid(),
+            'account_id' => $this->getAccountUuid(),
             'time' => $this->getTime()
         ];
     }

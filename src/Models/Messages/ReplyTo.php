@@ -9,66 +9,53 @@ namespace AmoJo\Models\Messages;
  */
 final class ReplyTo
 {
-    /** @var string|null */
-    private ?string $replyUid = null;
-
-    /** @var string|null */
-    private ?string $replyRefUid = null;
+    private ?string $replyUuid = null;
+    private ?string $replyRefUuid = null;
 
     /**
      * Получения идентификатора сообщения на стороне интеграции
-     *
-     * @return string|null
      */
-    public function getReplyUid(): ?string
+    public function getReplyUuid(): ?string
     {
-        return $this->replyUid;
+        return $this->replyUuid;
     }
 
     /**
      * Установка идентификатора сообщения на стороне интеграции
-     *
-     * @param string|null $replyUid
-     * @return ReplyTo
      */
-    public function setReplyUid(?string $replyUid): self
+    public function setReplyUuid(?string $replyUuid): self
     {
-        $this->replyUid = $replyUid;
+        $this->replyUuid = $replyUuid;
+
         return $this;
     }
 
     /**
      * Получения идентификатора сообщения в API чатов
-     *
-     * @return string|null
      */
-    public function getReplyRefUid(): ?string
+    public function getReplyRefUuid(): ?string
     {
-        return $this->replyRefUid;
+        return $this->replyRefUuid;
     }
 
     /**
      * Получения идентификатора сообщения в API чатов
-     *
-     * @param string|null $replyRefUid
-     * @return ReplyTo
      */
-    public function setReplyRefUid(?string $replyRefUid): self
+    public function setReplyRefUuid(?string $replyRefUuid): self
     {
-        $this->replyRefUid = $replyRefUid;
+        $this->replyRefUuid = $replyRefUuid;
+
         return $this;
     }
 
     /**
      * Возвращает массив message для объекта Payload
-     *
-     * @return array|null
      */
     public function toPayload(): ?array
     {
         $message = array_filter([
-            'id'    => $this->getReplyRefUid(),
-            'msgid' => $this->getReplyUid(),
+            'id' => $this->getReplyRefUuid(),
+            'msgid' => $this->getReplyUuid(),
         ]);
 
         return ['message' => $message];

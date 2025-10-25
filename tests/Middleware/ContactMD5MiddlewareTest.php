@@ -11,9 +11,6 @@ use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
 
-/**
- * @extends TestCase
- */
 class ContactMD5MiddlewareTest extends TestCase
 {
     /**
@@ -40,9 +37,6 @@ class ContactMD5MiddlewareTest extends TestCase
         $middleware->__invoke($handler)($request, []);
     }
 
-    /**
-     * @return array[]
-     */
     public function requestProvider(): array
     {
         return [

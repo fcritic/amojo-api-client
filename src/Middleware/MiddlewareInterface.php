@@ -8,9 +8,5 @@ use Closure;
 
 interface MiddlewareInterface
 {
-    /**
-     * @param callable $handler
-     * @return mixed
-     */
     public function __invoke(callable $handler): Closure;
 }

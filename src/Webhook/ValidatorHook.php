@@ -9,22 +9,16 @@ use AmoJo\Exception\InvalidRequestWebHookException;
 use Psr\Http\Message\RequestInterface;
 
 /**
- * Валидация веб хуков на исходящие сообщение
+ * Валидация хуков на исходящие сообщение
  *
  * Валидация по заголовку X-Signature
  */
-final class ValidatorWebHooks
+final class ValidatorHook
 {
-    /**
-     * @param RequestInterface $request Вебхук
-     * @param string $secretKey Секретный ключ канала чатов
-     * @return bool Ответ при валидации хука
-     * @throws InvalidRequestWebHookException
-     */
     public static function isValid(RequestInterface $request, string $secretKey): bool
     {
         try {
-            $requestBody = trim((string) $request->getBody(), "\n");
+            $requestBody = trim((string)$request->getBody(), "\n");
             $signature = hash_hmac('sha1', $requestBody, $secretKey);
 
             $receivedSignature = $request->getHeaderLine(HeaderType::SIGNATURE);

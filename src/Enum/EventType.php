@@ -9,9 +9,6 @@ namespace AmoJo\Enum;
  */
 class EventType
 {
-    /** @var string */
     public const NEW_MESSAGE = 'new_message';
-
-    /** @var string */
     public const EDIT_MESSAGE = 'edit_message';
 }

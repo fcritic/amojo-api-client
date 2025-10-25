@@ -4,19 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\DTO;
 
-use AmoJo\DTO\ConnectResponse;
+use AmoJo\DTO\Response\ConnectResponse;
 use AmoJo\DTO\ResponseFactory;
-use AmoJo\Enum\ActionsType;
+use AmoJo\Enum\ActionType;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @extends TestCase
- */
 class ConnectResponseTest extends TestCase
 {
-    /**
-     * @return void
-     */
     public function testConnectDataMapping(): void
     {
         $data = [
@@ -28,9 +22,9 @@ class ConnectResponseTest extends TestCase
         ];
 
         /** @var ConnectResponse $response */
-        $response = ResponseFactory::create(ActionsType::CONNECT, $data);
+        $response = ResponseFactory::create($data, ActionType::CONNECT);
 
-        $this->assertEquals('f36b8c48-ed97-4866-8aba-d55d429da86d', $response->getAccountUid());
+        $this->assertEquals('f36b8c48-ed97-4866-8aba-d55d429da86d', $response->getAccountUuid());
         $this->assertEquals(
             'f4afd704-a49b-4010-9311-06ef3d4ceed8_f36b8c48-ed97-4866-8aba-d55d429da86d',
             $response->getScopeId()

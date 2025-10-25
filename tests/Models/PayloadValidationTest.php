@@ -12,14 +12,8 @@ use AmoJo\Models\Users\Receiver;
 use AmoJo\Models\Users\Sender;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @extends TestCase
- */
 class PayloadValidationTest extends TestCase
 {
-    /**
-     * @return void
-     */
     public function testMissingRequiredFields(): void
     {
         $this->expectException(AmoJoException::class);
@@ -28,9 +22,6 @@ class PayloadValidationTest extends TestCase
         $payload->toApi();
     }
 
-    /**
-     * @return void
-     */
     public function testInvalidReceiverForOutgoing(): void
     {
         $this->expectException(AmoJoException::class);

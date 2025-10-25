@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AmoJo\Webhook\DTO;
 
-use AmoJo\Enum\WebHookType;
+use AmoJo\Enum\AmoJoHookAction;
 use AmoJo\Models\Conversation;
 use AmoJo\Models\Interfaces\MessageInterface;
 use AmoJo\Models\Interfaces\ReceiverInterface;
@@ -12,48 +12,18 @@ use AmoJo\Models\Interfaces\SenderInterface;
 use AmoJo\Models\Interfaces\UserInterface;
 use AmoJo\Models\Messages\ReplyTo;
 
-/**
- * События исходящего сообщения
- *
- * @extends AbstractWebHookEvent
- */
-final class OutgoingMessageEvent extends AbstractWebHookEvent
+final class AmoJoHookOutgoingMessage extends AbstractAmoJoHook
 {
-    /** @var MessageInterface */
     private MessageInterface $message;
-
-    /** @var SenderInterface */
     private UserInterface $sender;
-
-    /** @var ReceiverInterface */
     private UserInterface $receiver;
-
-    /** @var ReplyTo|null */
     private ?ReplyTo $replyTo = null;
-
-    /** @var string|null */
     private ?string $source = null;
-
-    /** @var int */
     private int $timestamp;
-
-    /** @var int */
     private int $msecTimestamp;
 
-    /**
-     * @param string $accountUid
-     * @param int $time
-     * @param UserInterface $receiver
-     * @param UserInterface $sender
-     * @param string|null $source
-     * @param Conversation $conversation
-     * @param int $timestamp
-     * @param int $msecTimestamp
-     * @param MessageInterface $message
-     * @param ReplyTo|null $replyTo
-     */
     public function __construct(
-        string $accountUid,
+        string $accountUuid,
         int $time,
         UserInterface $receiver,
         UserInterface $sender,
@@ -64,8 +34,6 @@ final class OutgoingMessageEvent extends AbstractWebHookEvent
         MessageInterface $message,
         ?ReplyTo $replyTo
     ) {
-        parent::__construct($accountUid, $time, $sender, $conversation);
-
         $this->receiver = $receiver;
         $this->sender = $sender;
         $this->source = $source;
@@ -73,78 +41,55 @@ final class OutgoingMessageEvent extends AbstractWebHookEvent
         $this->msecTimestamp = $msecTimestamp;
         $this->message = $message;
         $this->replyTo = $replyTo;
+
+        parent::__construct($accountUuid, $time, $sender, $conversation);
     }
 
-    /**
-     * @return string
-     */
     public function getType(): string
     {
-        return WebHookType::MESSAGE;
+        return AmoJoHookAction::MESSAGE;
     }
 
-    /**
-     * @return MessageInterface
-     */
     public function getMessage(): MessageInterface
     {
         return $this->message;
     }
 
-    /**
-     * @return SenderInterface
-     */
     public function getSender(): SenderInterface
     {
+        /** @var SenderInterface */
         return $this->sender;
     }
 
-    /**
-     * @return ReceiverInterface
-     */
     public function getReceiver(): ReceiverInterface
     {
+        /** @var ReceiverInterface */
         return $this->receiver;
     }
 
-    /**
-     * @return ReplyTo|null
-     */
     public function getReplyTo(): ?ReplyTo
     {
         return $this->replyTo;
     }
 
-    /**
-     * @return string|null
-     */
     public function getSource(): ?string
     {
         return $this->source;
     }
 
-    /**
-     * @return int
-     */
     public function getTimestamp(): int
     {
         return $this->timestamp;
     }
 
-    /**
-     * @return int
-     */
     public function getMsecTimestamp(): int
     {
         return $this->msecTimestamp;
     }
 
-    /**
-     * @return array
-     */
     public function toArray(): array
     {
-        $message = array_merge(['id' => $this->getMessage()->getRefUid()], $this->getMessage()->toPayload());
+        $message = array_merge(['id' => $this->getMessage()->getRefUuid()], $this->getMessage()->toPayload());
 
         if ($this->getReplyTo() !== null) {
             $replyTo['reply_to'] = $this->getReplyTo()->toPayload();

@@ -70,7 +70,7 @@ composer require fcritic/amojo-api-client
 use AmoJo\Client\AmoJoClient;
 use AmoJo\Models\Channel;
 
-$channel = new Channel(uid: 'channel-uid', secretKey: 'secret-key');
+$channel = new Channel(uuid: 'channel-uuid', secretKey: 'secret-key');
 $client = new AmoJoClient(
     channel: $channel,
     additionalMiddleware: [],
@@ -78,7 +78,7 @@ $client = new AmoJoClient(
 );
 
 $response = $client->connect(
-    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
+    accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     title: 'Мой канал',
     hookVersion: 'v2'
 );
@@ -88,10 +88,7 @@ echo 'Scope ID: ' . $response->getScopeId();
 
 ##### 2. Отключение канала
 ```php
-$response = $client->disconnect(accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d');
-if ($response->getDisconnect()) {
-    echo 'Канал успешно отключен';
-}
+$client->disconnect(accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d');
 ```
 
 ---
@@ -110,7 +107,7 @@ $contact = (new Sender())
     ->setProfile((new UserProfile())->setPhone('+1464874556719'));
 
 $response = $client->createChat(
-    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
+    accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     conversation: $conversation,
     contact: $contact
 );
@@ -125,10 +122,10 @@ echo 'ID чата в API чатов: ' . $response->getConversationRefId();
 use AmoJo\Models\Payload;
 use AmoJo\Models\Messages\TextMessage;
 
-$message = (new TextMessage())->setUid('MSG_100')->setText('Hello');
+$message = (new TextMessage())->setUuid('MSG_100')->setText('Hello');
 
 $response = $client->sendMessage(
-    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
+    accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     payload: (new Payload())
         ->setConversation($conversation)
         ->setSender($contact)
@@ -145,10 +142,10 @@ use AmoJo\Models\Users\Receiver;
 
 // amojo_id пользователя amoCRM
 $sender = (new Sender())->setRefId('113de373-a2d3-4eb7-a67c-04660332df07');
-$message = (new TextMessage())->setUid('MSG_101')->setText('Hello');
+$message = (new TextMessage())->setUuid('MSG_101')->setText('Hello');
 
 $response = $client->sendMessage(
-    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
+    accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     payload: (new Payload())
         ->setConversation($conversation)
         ->setSender($sender)
@@ -160,10 +157,10 @@ $response = $client->sendMessage(
 
 ##### 3. Редактирование сообщения
 ```php
-$message = (new TextMessage())->setUid('MSG_101')->setText('Hello, Richard');
+$message = (new TextMessage())->setUuid('MSG_101')->setText('Hello, Richard');
 
 $response = $client->editMessage(
-    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
+    accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     (new Payload())
         ->setConversation($conversation)
         ->setMessage($message)
@@ -174,15 +171,15 @@ $response = $client->editMessage(
 ```php
 use AmoJo\Models\Messages\ReplyTo;
 
-$message = (new TextMessage())->setUid('MSG_102')->setText('I want to place an order');
+$message = (new TextMessage())->setUuid('MSG_102')->setText('I want to place an order');
 
 $response = $client->sendMessage(
-    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
+    accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     payload: (new Payload())
         ->setConversation($conversation)
         ->setSender($contact)
         ->setMessage($message)
-        ->setReplyTo((new ReplyTo())->setReplyUid('MSG_101'))
+        ->setReplyTo((new ReplyTo())->setReplyUuid('MSG_101'))
 );
 ```
 
@@ -192,7 +189,7 @@ $response = $client->sendMessage(
 ##### 1. История чата
 ```php
 $response = $client->getHistoryChat(
-    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
+    accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     conversationRefId: $conversation->getRefId()
 );
 
@@ -207,45 +204,33 @@ use AmoJo\Enum\DeliveryStatus;
 use AmoJo\Enum\ErrorCode;
 use AmoJo\Models\Deliver;
 
-$response = $client->deliverStatus(
-    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
-    messageUid: $message->getRefUid(),
+$client->deliverStatus(
+    accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
+    messageUuid: $message->getRefUuid(),
     deliver: (new Deliver(DeliveryStatus::ERROR))
         ->setErrorCode(ErrorCode::WITH_DESCRIPTION)
         ->setMessageError('User deleted')
 );
-
-if ($response->getDelivery()) {
-    echo 'Статус установлен';
-}
 ```
 
 ##### 3. Отправка или снятие реакции
 ```php
-$response = $client->react(
-    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
+$client->react(
+    accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     conversation: $conversation,
     sender: $contact,
     message: $message,
     emoji: '👍'
 );
-
-if ($response->getReact()) {
-    echo 'Реакция установлена';
-}
 ```
 
 ##### 4. Информации о печатание
 ```php
-$response = $client->typing(
-    accountUid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
+$client->typing(
+    accountUuid: 'f36b8c48-ed97-4866-8aba-d55d429da86d',
     conversation: $conversation,
     sender: $contact,
 );
-
-if ($response->getTyping()) {
-    echo 'Информация доставлена';
-}
 ```
 
 ---
@@ -315,10 +300,11 @@ try {
 ## 🔐 Работа с WebHooks
 
 ##### 1. Валидация WebHooks
-```php
-use AmoJo\Webhook\ValidatorWebHooks;
 
-if (! ValidatorWebHooks::isValid(request: $request, secretKey: '465c28d756f...')) {
+```php
+use AmoJo\Webhook\ValidatorHook;
+
+if (!ValidatorHook::isValid(request: $request, secretKey: '465c28d756f...')) {
     // Обработка не валидного вебхука
 }
 ```
@@ -326,9 +312,9 @@ if (! ValidatorWebHooks::isValid(request: $request, secretKey: '465c28d756f...')
 ##### 2. Строгая типизация данных полученных из WebHooks amoCRM
 
 ```php
-use AmoJo\Webhook\ParserWebHooks;
+use AmoJo\Webhook\AmoJoHookFactory;
 
-$event = (new ParserWebHooks())->parse($requestBody);
+$event = (new AmoJoHookFactory())->fromArray($requestBody);
         
 var_dump($event->toArray());
 ```

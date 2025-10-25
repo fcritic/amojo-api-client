@@ -11,9 +11,6 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @extends TestCase
- */
 class SignatureMiddlewareTest extends TestCase
 {
     private const SECRET_KEY = 'test_secret_123';

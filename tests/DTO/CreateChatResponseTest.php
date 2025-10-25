@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\DTO;
 
-use AmoJo\DTO\CreateChatResponse;
+use AmoJo\DTO\Response\CreateChatResponse;
 use AmoJo\DTO\ResponseFactory;
-use AmoJo\Enum\ActionsType;
+use AmoJo\Enum\ActionType;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -14,9 +14,6 @@ use PHPUnit\Framework\TestCase;
  */
 class CreateChatResponseTest extends TestCase
 {
-    /**
-     * @return void
-     */
     public function testCreateChatDataMapping(): void
     {
         $data = [
@@ -31,7 +28,7 @@ class CreateChatResponseTest extends TestCase
         ];
 
         /** @var CreateChatResponse $response */
-        $response = ResponseFactory::create(ActionsType::CHAT, $data);
+        $response = ResponseFactory::create($data, ActionType::CHAT);
 
         $this->assertEquals('b52c987e-1ef0-4544-b4e7-6d2ba665f9e4', $response->getConversationRefId());
         $this->assertEquals('9320f3de-aa61-4d12-8cf8-39e91b347445', $response->getUser()->getRefId());

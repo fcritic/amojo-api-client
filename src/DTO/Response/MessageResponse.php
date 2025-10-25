@@ -2,48 +2,32 @@
 
 declare(strict_types=1);
 
-namespace AmoJo\DTO;
+namespace AmoJo\DTO\Response;
 
-/**
- * DTO ответа импорта/редактирования сообщения
- *
- * @extends AbstractResponse
- */
-final class MessageResponse extends AbstractResponse
+final class MessageResponse implements ResponseInterface
 {
-    /** @var string */
     private string $conversationRefId;
-
-    /** @var string|null */
     private ?string $senderRefId;
-
-    /** @var string|null */
     private ?string $receiverRefId;
-
-    /** @var string */
     private string $msgRefId;
-
-    /** @var string */
     private string $msgId;
 
-    /**
-     * @param array $data
-     */
-    public function __construct(array $data)
-    {
-        parent::__construct($data);
-
-        $this->conversationRefId = $data['new_message']['conversation_id'];
-        $this->senderRefId = $data['new_message']['sender_id'] ?? null;
-        $this->receiverRefId = $data['new_message']['receiver_id'] ?? null;
-        $this->msgRefId = $data['new_message']['msgid'];
-        $this->msgId = $data['new_message']['ref_id'];
+    public function __construct(
+        string $conversationRefId,
+        string $senderRefId,
+        string $receiverRefId,
+        string $msgRefId,
+        string $msgId
+    ) {
+        $this->conversationRefId = $conversationRefId;
+        $this->senderRefId = $senderRefId;
+        $this->receiverRefId = $receiverRefId;
+        $this->msgRefId = $msgRefId;
+        $this->msgId = $msgId;
     }
 
     /**
      * Идентификатор чата в API чатов
-     *
-     * @return string
      */
     public function getConversationRefId(): string
     {
@@ -53,8 +37,6 @@ final class MessageResponse extends AbstractResponse
     /**
      * Идентификатор отправителя в API чатов
      * Не null если выполнен запрос на импорт сообщения, а не редактирование
-     *
-     * @return string|null
      */
     public function getSenderRefId(): ?string
     {
@@ -64,8 +46,6 @@ final class MessageResponse extends AbstractResponse
     /**
      * Идентификатор получателя в API чатов
      * Не null если выполнен запрос на импорт исходящего сообщения
-     *
-     * @return string|null
      */
     public function getReceiverRefId(): ?string
     {
@@ -74,8 +54,6 @@ final class MessageResponse extends AbstractResponse
 
     /**
      * Идентификатор сообщения на стороне интеграции
-     *
-     * @return string
      */
     public function getMsgRefId(): string
     {
@@ -84,11 +62,33 @@ final class MessageResponse extends AbstractResponse
 
     /**
      * Идентификатор сообщения в API чатов
-     *
-     * @return string
      */
     public function getMsgId(): string
     {
         return $this->msgId;
+    }
+
+    public static function fromArray(array $data): ResponseInterface
+    {
+        return new self(
+            (string)($data['new_message']['conversation_id'] ?? ''),
+            (string)($data['new_message']['sender_id'] ?? null),
+            (string)($data['new_message']['receiver_id'] ?? null),
+            (string)($data['new_message']['msgid'] ?? ''),
+            (string)($data['new_message']['ref_id'] ?? ''),
+        );
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'new_message' => [
+                'conversation_id' => $this->getConversationRefId(),
+                'sender_id' => $this->getSenderRefId(),
+                'receiver_id' => $this->getReceiverRefId(),
+                'msg_id' => $this->getMsgRefId(),
+                'ref_id' => $this->getMsgId(),
+            ]
+        ];
     }
 }

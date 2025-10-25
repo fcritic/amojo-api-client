@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace Tests\Client;
 
 use AmoJo\Client\AmoJoClient;
-use AmoJo\Client\ApiGatewayInterface;
-use AmoJo\DTO\ConnectResponse;
-use AmoJo\DTO\CreateChatResponse;
-use AmoJo\DTO\DeliveryResponse;
-use AmoJo\DTO\DisconnectResponse;
-use AmoJo\DTO\HistoryChatResponse;
-use AmoJo\DTO\MessageResponse;
-use AmoJo\DTO\ReactResponse;
-use AmoJo\DTO\TypingResponse;
-use AmoJo\Enum\ActionsType;
+use AmoJo\Client\AmoJoHttpClient;
+use AmoJo\DTO\Response\ConnectResponse;
+use AmoJo\DTO\Response\CreateChatResponse;
+use AmoJo\DTO\Response\EmptyResponse;
+use AmoJo\DTO\Response\HistoryChatResponse;
+use AmoJo\DTO\Response\MessageResponse;
+use AmoJo\Enum\ActionType;
 use AmoJo\Enum\DeliveryStatus;
 use AmoJo\Enum\ErrorCode;
 use AmoJo\Enum\EventType;
@@ -28,64 +25,38 @@ use AmoJo\Models\Payload;
 use AmoJo\Models\Users\Receiver;
 use AmoJo\Models\Users\Sender;
 use AmoJo\Models\Users\ValueObject\UserProfile;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
 
-/**
- * @extends TestCase
- */
 class AmoJoClientTest extends TestCase
 {
-    /**
-     * @var ApiGatewayInterface|(ApiGatewayInterface&object&MockObject)|(ApiGatewayInterface&MockObject)|(object&MockObject)|MockObject
-     */
-    private ApiGatewayInterface $gateway;
-
-    /** @var AmoJoClient */
+    private AmoJoHttpClient $httpClient;
     private AmoJoClient $client;
-
-    /** @var string */
     private const SCOPE_ID = 'f4afd704-a49b-4010-9311-06ef3d4ceed8_f36b8c48-ed97-4866-8aba-d55d429da86d';
-
-    /** @var string */
     private const ACCOUNT_UID = 'f36b8c48-ed97-4866-8aba-d55d429da86d';
-
-    /** @var string */
     private const CHANNEL_UID = 'f4afd704-a49b-4010-9311-06ef3d4ceed8';
 
-    /**
-     * @return void
-     */
     protected function setUp(): void
     {
-        $this->gateway = $this->createMock(ApiGatewayInterface::class);
+        $this->httpClient = $this->createMock(AmoJoHttpClient::class);
         $channel = new Channel(self::CHANNEL_UID, '11c08dd7ba836ea9cfc03133b4813d');
         $this->client = new AmoJoClient($channel, [], 'ru');
-        $this->setPrivateProperty($this->client, $this->gateway);
+        $this->setPrivateProperty($this->client, $this->httpClient);
     }
 
-    /**
-     * @param object $object
-     * @param $value
-     * @return void
-     */
     private function setPrivateProperty(object $object, $value): void
     {
         try {
             $reflection = new ReflectionClass($object);
-            $property = $reflection->getProperty('gateway');
+            $property = $reflection->getProperty('httpClient');
             $property->setAccessible(true);
             $property->setValue($object, $value);
         } catch (ReflectionException $e) {
-            $this->fail("Failed to set private property 'gateway': " . $e->getMessage());
+            $this->fail("Failed to set private property 'httpClient': " . $e->getMessage());
         }
     }
 
-    /**
-     * @return void
-     */
     public function testConnect(): void
     {
         $expectedResponse = [
@@ -96,9 +67,9 @@ class AmoJoClientTest extends TestCase
             'is_time_window_disabled' => true
         ];
 
-        $this->gateway->expects($this->once())
+        $this->httpClient->expects($this->once())
             ->method(HttpMethod::POST_REQUEST)
-            ->with(self::CHANNEL_UID . ActionsType::CONNECT, $this->equalTo([
+            ->with(sprintf('%s/%s', self::CHANNEL_UID, ActionType::CONNECT), $this->equalTo([
                 'secret_key' => $this->client->getChannel()->getSecretKey(),
                 'json' => [
                     'account_id' => self::ACCOUNT_UID,
@@ -111,21 +82,18 @@ class AmoJoClientTest extends TestCase
         $response = $this->client->connect(self::ACCOUNT_UID);
 
         $this->assertInstanceOf(ConnectResponse::class, $response);
-        $this->assertEquals(self::ACCOUNT_UID, $response->getAccountUid());
+        $this->assertEquals(self::ACCOUNT_UID, $response->getAccountUuid());
         $this->assertEquals(self::SCOPE_ID, $response->getScopeId());
         $this->assertEquals('Test Channel', $response->getTitle());
         $this->assertEquals('v2', $response->getHookApiVersion());
         $this->assertTrue($response->isTimeWindowDisabled());
     }
 
-    /**
-     * @return void
-     */
     public function testDisconnect(): void
     {
-        $this->gateway->expects($this->once())
+        $this->httpClient->expects($this->once())
             ->method(HttpMethod::DELETE_REQUEST)
-            ->with(self::CHANNEL_UID . ActionsType::DISCONNECT, $this->equalTo([
+            ->with(sprintf('%s/%s', self::CHANNEL_UID, ActionType::DISCONNECT), $this->equalTo([
                 'secret_key' => $this->client->getChannel()->getSecretKey(),
                 'json' => [
                     'account_id' => self::ACCOUNT_UID,
@@ -133,12 +101,9 @@ class AmoJoClientTest extends TestCase
             ]));
 
         $response = $this->client->disconnect(self::ACCOUNT_UID);
-        $this->assertInstanceOf(DisconnectResponse::class, $response);
+        $this->assertInstanceOf(EmptyResponse::class, $response);
     }
 
-    /**
-     * @return void
-     */
     public function testCreateChat(): void
     {
         $conversationRefId = 'b52c987e-1ef0-4544-b4e7-6d2ba665f9e4';
@@ -160,10 +125,10 @@ class AmoJoClientTest extends TestCase
             ]
         ];
 
-        $this->gateway->expects($this->once())
+        $this->httpClient->expects($this->once())
             ->method(HttpMethod::POST_REQUEST)
             ->with(
-                self::SCOPE_ID . ActionsType::CHAT,
+                sprintf('%s/%s', self::SCOPE_ID, ActionType::CHAT),
                 $this->equalTo(
                     [
                         'secret_key' => $this->client->getChannel()->getSecretKey(),
@@ -206,9 +171,6 @@ class AmoJoClientTest extends TestCase
         $this->assertEquals($phone, $response->getUser()->getProfile()->getPhone());
     }
 
-    /**
-     * @return void
-     */
     public function testSendMessage(): void
     {
         $externalId = 'source_123';
@@ -224,7 +186,7 @@ class AmoJoClientTest extends TestCase
             ]
         ];
 
-        $this->gateway->expects($this->once())
+        $this->httpClient->expects($this->once())
             ->method(HttpMethod::POST_REQUEST)
             ->with(
                 self::SCOPE_ID,
@@ -246,19 +208,16 @@ class AmoJoClientTest extends TestCase
         $this->assertEquals('b52c987e-1ef0-4544-b4e7-6d2ba665f9e4', $response->getConversationRefId());
     }
 
-    /**
-     * @return void
-     */
     public function testDeliverStatus(): void
     {
         $messageUid = '3f2fdc80-2619-48d9-9c12-c1ea27cfdf6a';
         $deliver = (new Deliver(DeliveryStatus::ERROR))
             ->setErrorCode(ErrorCode::CONVERSATION_CREATION_FAILED);
 
-        $this->gateway->expects($this->once())
+        $this->httpClient->expects($this->once())
             ->method(HttpMethod::POST_REQUEST)
             ->with(
-                self::SCOPE_ID . '/' . $messageUid . ActionsType::DELIVERY_STATUS,
+                sprintf('%s/%s/%s', self::SCOPE_ID, $messageUid, ActionType::DELIVERY_STATUS),
                 $this->equalTo([
                     'secret_key' => $this->client->getChannel()->getSecretKey(),
                     'json' => [
@@ -271,12 +230,9 @@ class AmoJoClientTest extends TestCase
             ->willReturn(['status' => 200]);
 
         $response = $this->client->deliverStatus(self::ACCOUNT_UID, $messageUid, $deliver);
-        $this->assertInstanceOf(DeliveryResponse::class, $response);
+        $this->assertInstanceOf(EmptyResponse::class, $response);
     }
 
-    /**
-     * @return void
-     */
     public function testGetHistoryChat(): void
     {
         $conversationRefId = 'b52c987e-1ef0-4544-b4e7-6d2ba665f9e4';
@@ -347,10 +303,10 @@ class AmoJoClientTest extends TestCase
             ]
         ];
 
-        $this->gateway->expects($this->once())
+        $this->httpClient->expects($this->once())
             ->method(HttpMethod::GET_REQUEST)
             ->with(
-                self::SCOPE_ID . ActionsType::CHAT . '/' . $conversationRefId . ActionsType::GET_HISTORY,
+                sprintf('%s/%s/%s/%s', self::SCOPE_ID, ActionType::CHAT, $conversationRefId, ActionType::GET_HISTORY),
                 [
                     'secret_key' => $this->client->getChannel()->getSecretKey(),
                     'query' => $query
@@ -362,9 +318,9 @@ class AmoJoClientTest extends TestCase
         $this->assertInstanceOf(HistoryChatResponse::class, $response);
         $this->assertEquals(
             '53da915d-32a0-4b8a-891d-da331b51cfc0',
-            $response->getMessages()[2]->getMessage()->getRefUid()
+            $response->getMessages()[2]->getMessage()->getRefUuid()
         );
-        $this->assertEquals('1', $response->getMessages()[2]->getMessage()->getUid());
+        $this->assertEquals('1', $response->getMessages()[2]->getMessage()->getUuid());
         $this->assertEquals('Hello', $response->getMessages()[1]->getMessage()->getText());
         $this->assertEquals(
             '76c6e590-b9e7-4882-9dc7-b64a5ed4f6d6',
@@ -373,18 +329,15 @@ class AmoJoClientTest extends TestCase
         $this->assertEquals('3986893063', $response->getMessages()[0]->getReceiver()->getId());
     }
 
-    /**
-     * @return void
-     */
     public function testTyping(): void
     {
         $conversation = (new Conversation())->setId('12259256265');
         $sender = (new Sender())->setId('3986893063');
 
-        $this->gateway->expects($this->once())
+        $this->httpClient->expects($this->once())
             ->method(HttpMethod::POST_REQUEST)
             ->with(
-                self::SCOPE_ID . ActionsType::TYPING,
+                sprintf('%s/%s', self::SCOPE_ID, ActionType::TYPING),
                 $this->equalTo(
                     [
                         'secret_key' => $this->client->getChannel()->getSecretKey(),
@@ -398,22 +351,19 @@ class AmoJoClientTest extends TestCase
             ->willReturn(['status' => 200]);
 
         $response = $this->client->typing(self::ACCOUNT_UID, $conversation, $sender);
-        $this->assertInstanceOf(TypingResponse::class, $response);
+        $this->assertInstanceOf(EmptyResponse::class, $response);
     }
 
-    /**
-     * @return void
-     */
     public function testReact(): void
     {
         $conversation = (new Conversation())->setId('12259256265');
         $sender = (new Sender())->setId('3986893063');
-        $message = (new TextMessage())->setRefUid('fbf3fe89-143a-43af-aaae-49fa1cece1d8');
+        $message = (new TextMessage())->setRefUuid('fbf3fe89-143a-43af-aaae-49fa1cece1d8');
 
-        $this->gateway->expects($this->once())
+        $this->httpClient->expects($this->once())
             ->method(HttpMethod::POST_REQUEST)
             ->with(
-                self::SCOPE_ID . ActionsType::REACT,
+                sprintf('%s/%s', self::SCOPE_ID, ActionType::REACT),
                 $this->equalTo(
                     [
                         'secret_key' => $this->client->getChannel()->getSecretKey(),
@@ -430,12 +380,9 @@ class AmoJoClientTest extends TestCase
             ->willReturn(['status' => 200]);
 
         $response = $this->client->react(self::ACCOUNT_UID, $conversation, $sender, $message, '🍺');
-        $this->assertInstanceOf(ReactResponse::class, $response);
+        $this->assertInstanceOf(EmptyResponse::class, $response);
     }
 
-    /**
-     * @return Payload
-     */
     private function createPayload(): Payload
     {
         $conversation = (new Conversation())->setId('12259256265')->setRefId('b52c987e-1ef0-4544-b4e7-6d2ba665f9e4');
@@ -445,7 +392,7 @@ class AmoJoClientTest extends TestCase
             ->setRefId('9320f3de-aa61-4d12-8cf8-39e91b347445')
             ->setName('John Doe')
             ->setAvatar('https://example.com/avatar.png');
-        $message = (new TextMessage())->setText('Test')->setUid('msg-789');
+        $message = (new TextMessage())->setText('Test')->setUuid('msg-789');
 
         return (new Payload())
             ->setConversation($conversation)
@@ -454,9 +401,6 @@ class AmoJoClientTest extends TestCase
             ->setMessage($message);
     }
 
-    /**
-     * @return void
-     */
     public function testInvalidUuidThrowsException(): void
     {
         $this->expectException(AmoJoException::class);

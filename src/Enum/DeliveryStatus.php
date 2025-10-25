@@ -12,15 +12,12 @@ use AmoJo\Models\Deliver;
  */
 class DeliveryStatus
 {
-    /** @var string Отправлено */
+    /** Отправлено */
     public const SENT = '';
-
-    /** @var int Доставлено */
+    /** Доставлено */
     public const DELIVERED = 1;
-
-    /** @var int Прочитано */
+    /** Прочитано */
     public const READ = 2;
-
-    /** @var int Ошибка */
+    /** Ошибка */
     public const ERROR = -1;
 }
