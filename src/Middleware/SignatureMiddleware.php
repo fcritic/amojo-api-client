@@ -24,10 +24,6 @@ use Psr\Http\Message\RequestInterface;
  */
 final class SignatureMiddleware implements MiddlewareInterface
 {
-    /**
-     * @param callable $handler
-     * @return Closure
-     */
     public function __invoke(callable $handler): Closure
     {
         /**
@@ -36,7 +32,7 @@ final class SignatureMiddleware implements MiddlewareInterface
         return static function (RequestInterface $request, array $options) use ($handler) {
 
             /** Получаем секретный ключ из options передаваемый в запросе метода объекта AmoJoClient */
-            if (! isset($options['secret_key'])) {
+            if (!isset($options['secret_key'])) {
                 throw new RequiredParametersMissingException('Secret key is required.');
             }
 

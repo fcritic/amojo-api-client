@@ -12,14 +12,8 @@ use AmoJo\Models\Users\Sender;
 use AmoJo\Models\Users\ValueObject\UserProfile;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @extends TestCase
- */
 class PayloadTest extends TestCase
 {
-    /**
-     * @return void
-     */
     public function testFullPayload(): void
     {
         $conversation = (new Conversation())->setId('5454120498');
@@ -39,7 +33,7 @@ class PayloadTest extends TestCase
 
         $message = (new TextMessage())
             ->setText('Hello World')
-            ->setUid('1036')
+            ->setUuid('1036')
             ->setTimestamp(1678901234);
 
         $payload = (new Payload())

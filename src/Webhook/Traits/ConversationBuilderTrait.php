@@ -6,15 +6,9 @@ namespace AmoJo\Webhook\Traits;
 
 use AmoJo\Models\Conversation;
 
-trait ConversationParserTrait
+trait ConversationBuilderTrait
 {
-    /**
-     * Создания чата для вебхука
-     *
-     * @param array $data
-     * @return Conversation
-     */
-    protected function parseConversation(array $data): Conversation
+    protected function buildConversation(array $data): Conversation
     {
         return (new Conversation())
             ->setRefId($data['id'])

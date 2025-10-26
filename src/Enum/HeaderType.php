@@ -9,18 +9,9 @@ namespace AmoJo\Enum;
  */
 class HeaderType
 {
-    /** @var string */
     public const DATE = 'Date';
-
-    /** @var string */
     public const CONTENT_TYPE = 'Content-Type';
-
-    /** @var string */
     public const CONTENT_MD5 = 'Content-MD5';
-
-    /** @var string */
     public const SIGNATURE = 'X-Signature';
-
-    /** @var string */
     public const USER_AGENT = 'User-Agent';
 }

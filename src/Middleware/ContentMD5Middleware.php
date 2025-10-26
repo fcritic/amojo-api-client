@@ -21,10 +21,6 @@ use Psr\Http\Message\RequestInterface;
  */
 final class ContentMD5Middleware implements MiddlewareInterface
 {
-    /**
-     * @param callable $handler
-     * @return Closure
-     */
     public function __invoke(callable $handler): Closure
     {
         /**
@@ -32,7 +28,7 @@ final class ContentMD5Middleware implements MiddlewareInterface
          */
         return static function (RequestInterface $request, array $options) use ($handler) {
 
-            $body = (string) $request->getBody();
+            $body = (string)$request->getBody();
 
             /** @var RequestInterface $request */
             $request = $request->withHeader(HeaderType::CONTENT_MD5, strtolower(md5($body)));

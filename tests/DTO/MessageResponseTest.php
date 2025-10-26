@@ -4,19 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\DTO;
 
-use AmoJo\DTO\MessageResponse;
+use AmoJo\DTO\Response\MessageResponse;
 use AmoJo\DTO\ResponseFactory;
-use AmoJo\Enum\ActionsType;
+use AmoJo\Enum\ActionType;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @extends TestCase
- */
 class MessageResponseTest extends TestCase
 {
-    /**
-     * @return void
-     */
     public function testMessageDataMapping(): void
     {
         $data = [
@@ -29,7 +23,7 @@ class MessageResponseTest extends TestCase
         ];
 
         /** @var MessageResponse $response */
-        $response = ResponseFactory::create(ActionsType::MESSAGE, $data);
+        $response = ResponseFactory::create($data, ActionType::MESSAGE);
 
         $this->assertEquals('b52c987e-1ef0-4544-b4e7-6d2ba665f9e4', $response->getConversationRefId());
         $this->assertEquals('9320f3de-aa61-4d12-8cf8-39e91b347445', $response->getSenderRefId());

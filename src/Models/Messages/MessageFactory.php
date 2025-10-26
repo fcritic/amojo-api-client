@@ -8,102 +8,78 @@ use AmoJo\Enum\MessageType;
 use AmoJo\Exception\UnsupportedMessageTypeException;
 use AmoJo\Models\Interfaces\MessageInterface;
 
-/**
- * Фабрика сообщений
- */
 class MessageFactory
 {
-    /** @var string[] */
     public const TYPE_MAPPING = [
-        MessageType::TEXT     => TextMessage::class,
-        MessageType::CONTACT  => ContactMessage::class,
-        MessageType::FILE     => FileMessage::class,
-        MessageType::VOICE    => VoiceMessage::class,
-        MessageType::AUDIO    => AudioMessage::class,
+        MessageType::TEXT => TextMessage::class,
+        MessageType::CONTACT => ContactMessage::class,
+        MessageType::FILE => FileMessage::class,
+        MessageType::VOICE => VoiceMessage::class,
+        MessageType::AUDIO => AudioMessage::class,
         MessageType::LOCATION => LocationMessage::class,
-        MessageType::PICTURE  => PictureMessage::class,
-        MessageType::VIDEO    => VideoMessage::class,
-        MessageType::STICKER  => StickerMessage::class
+        MessageType::PICTURE => PictureMessage::class,
+        MessageType::VIDEO => VideoMessage::class,
+        MessageType::STICKER => StickerMessage::class
     ];
 
-    /**
-     * Создания сообщения при определении его типа
-     *
-     * @param array $data array[message]
-     * @return MessageInterface
-     */
     public function create(array $data): MessageInterface
     {
         $messageType = $data['message']['type'] ?? 'text';
 
         if (!isset(self::TYPE_MAPPING[$messageType])) {
-            throw new UnsupportedMessageTypeException("Unsupported message type: {$messageType}");
+            throw new UnsupportedMessageTypeException(sprintf('Unsupported message type: %s', $messageType));
         }
 
         $class = self::TYPE_MAPPING[$messageType];
         $message = new $class();
 
-        $this->hydrateCommonFields($message, $data);
-        $this->hydrateSpecificFields($message, $data);
+        $this->initializeBaseProperties($message, $data);
+        $this->populateTypeProperties($message, $data['message']);
 
         return $message;
     }
 
-    /**
-     * Устанавливает свойства, которые могут быть у любого сообщения
-     *
-     * @param MessageInterface $message
-     * @param array $data
-     * @return void
-     */
-    private function hydrateCommonFields(MessageInterface $message, array $data): void
+    private function initializeBaseProperties(MessageInterface $message, array $data): void
     {
         $message
-            ->setRefUid($data['message']['id'] ?? '')
-            ->setUid($data['message']['client_id'] ?? '')
+            ->setRefUuid($data['message']['id'] ?? '')
+            ->setUuid($data['message']['client_id'] ?? '')
             ->setText($data['message']['text'] ?? '')
             ->setTimestamp($data['timestamp'] ?? $data['message']['timestamp'])
             ->setMsecTimestamp($data['msec_timestamp'] ?? $data['message']['msec_timestamp']);
     }
 
-    /**
-     * Устанавливает свойства в зависимости от типа сообщения
-     *
-     * @param MessageInterface $message
-     * @param array $data
-     * @return void
-     */
-    private function hydrateSpecificFields(MessageInterface $message, array $data): void
+    private function populateTypeProperties(MessageInterface $message, array $data): void
     {
         switch (true) {
             case $message instanceof FileMessage:
             case $message instanceof PictureMessage:
             case $message instanceof VideoMessage:
                 $message
-                    ->setMedia($data['message']['media'])
-                    ->setFileName($data['message']['file_name'])
-                    ->setFileSize($data['message']['file_size']);
+                    ->setMedia($data['media'])
+                    ->setFileName($data['file_name'])
+                    ->setFileSize($data['file_size']);
                 break;
 
             case $message instanceof LocationMessage:
                 $message
-                    ->setLat($data['message']['location']['lat'])
-                    ->setLon($data['message']['location']['lon']);
+                    ->setLat($data['location']['lat'])
+                    ->setLon($data['location']['lon']);
                 break;
 
             case $message instanceof ContactMessage:
                 $message
-                    ->setName($data['message']['contact']['name'])
-                    ->setPhone($data['message']['contact']['phone']);
+                    ->setName($data['contact']['name'])
+                    ->setPhone($data['contact']['phone']);
                 break;
 
             case $message instanceof AudioMessage:
             case $message instanceof VoiceMessage:
                 $message
-                    ->setMedia($data['message']['media'])
-                    ->setFileName($data['message']['file_name'])
-                    ->setFileSize($data['message']['file_size'])
-                    ->setMediaDuration($data['message']['media_duration']);
+                    ->setMedia($data['media'])
+                    ->setFileName($data['file_name'])
+                    ->setFileSize($data['file_size'])
+                    ->setMediaDuration($data['media_duration']);
                 break;
 
             case $message instanceof TextMessage:
@@ -111,7 +87,7 @@ class MessageFactory
 
             default:
                 throw new UnsupportedMessageTypeException(
-                    "Unsupported message type: {$message['message']['type']}"
+                    sprintf('Unsupported message type: %s', $message['message']['type'])
                 );
         }
     }

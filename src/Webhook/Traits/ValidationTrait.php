@@ -4,22 +4,14 @@ declare(strict_types=1);
 
 namespace AmoJo\Webhook\Traits;
 
-use AmoJo\Enum\WebHookType;
+use AmoJo\Enum\AmoJoHookAction;
 use AmoJo\Exception\InvalidRequestWebHookException;
 
 trait ValidationTrait
 {
-    /**
-     * Валидация вебхука на обязательные параметры
-     *
-     * @param array $data
-     * @param array $requiredFields
-     * @param string $errorPrefix
-     * @return void
-     */
     protected function validateStructure(array $data, array $requiredFields, string $errorPrefix = ''): void
     {
-        $missing = []; // Собираем все ошибки
+        $missing = [];
 
         foreach ($requiredFields as $field) {
             if (!$this->hasField($data, $field)) {
@@ -29,21 +21,15 @@ trait ValidationTrait
 
         if (!empty($missing)) {
             throw new InvalidRequestWebHookException(
-                $errorPrefix . " Missing fields: " . implode(', ', $missing)
+                sprintf('[%s] Missing fields: %s', $errorPrefix, implode(', ', $missing))
             );
         }
     }
 
-    /**
-     * Обязательные свойства для вебхука, в зависимости от его типа
-     *
-     * @param string $type
-     * @return array|string[]
-     */
     private function getValidationRules(string $type): array
     {
         static $rules = [
-            WebHookType::MESSAGE => [
+            AmoJoHookAction::MESSAGE => [
                 'account_id',
                 'time',
                 'message.sender.id',
@@ -54,7 +40,7 @@ trait ValidationTrait
                 'message.message.id',
                 'message.message.type',
             ],
-            WebHookType::REACTION => [
+            AmoJoHookAction::REACTION => [
                 'account_id',
                 'time',
                 'action.reaction.msgid',
@@ -62,7 +48,7 @@ trait ValidationTrait
                 'action.reaction.conversation.id',
                 'action.reaction.type',
             ],
-            WebHookType::TYPING =>  [
+            AmoJoHookAction::TYPING =>  [
                 'account_id',
                 'time',
                 'action.typing.user.id',
@@ -74,17 +60,12 @@ trait ValidationTrait
         return $rules[$type] ?? [];
     }
 
-    /**
-     * @param array $data
-     * @param string $field
-     * @return bool
-     */
     private function hasField(array $data, string $field): bool
     {
         // Статический кэш для хранения разбитых путей
         static $pathCache = [];
 
-        // Если путь не закэширован — разбиваем и сохраняем
+        // Если путь не закэширован - разбиваем и сохраняем
         if (!isset($pathCache[$field])) {
             $pathCache[$field] = explode('.', $field);
         }

@@ -4,39 +4,39 @@ declare(strict_types=1);
 
 namespace AmoJo\DTO;
 
-use AmoJo\Enum\ActionsType;
-use InvalidArgumentException;
+use AmoJo\DTO\Response\ConnectResponse;
+use AmoJo\DTO\Response\CreateChatResponse;
+use AmoJo\DTO\Response\EmptyResponse;
+use AmoJo\DTO\Response\HistoryChatResponse;
+use AmoJo\DTO\Response\MessageResponse;
+use AmoJo\DTO\Response\ResponseInterface;
+use AmoJo\Enum\ActionType;
 
 /**
  * Фабрика ответа. Возвращает DTO
  */
 class ResponseFactory
 {
-    /** @var string[] */
-    private const FACTORIES = [
-        ActionsType::MESSAGE         => MessageResponse::class,
-        ActionsType::CONNECT         => ConnectResponse::class,
-        ActionsType::DISCONNECT      => DisconnectResponse::class,
-        ActionsType::CHAT            => CreateChatResponse::class,
-        ActionsType::DELIVERY_STATUS => DeliveryResponse::class,
-        ActionsType::GET_HISTORY     => HistoryChatResponse::class,
-        ActionsType::TYPING          => TypingResponse::class,
-        ActionsType::REACT           => ReactResponse::class,
+    /**
+     * Все остальные методы имею пустые ответы и на них возвращается
+     * @uses EmptyResponse
+     */
+    private const RESPONSE_MAP = [
+        ActionType::MESSAGE => MessageResponse::class,
+        ActionType::CONNECT => ConnectResponse::class,
+        ActionType::GET_HISTORY => HistoryChatResponse::class,
+        ActionType::CHAT => CreateChatResponse::class,
     ];
 
-    /**
-     * @param string $action Тип действия из ActionsType
-     * @param array $data Данные ответа
-     * @return AbstractResponse
-     * @throws InvalidArgumentException Если действие не поддерживается
-     */
-    public static function create(string $action, array $data): AbstractResponse
+    public static function create(array $data, string $action = 'empty'): ResponseInterface
     {
-        if (!isset(self::FACTORIES[$action])) {
-            throw new InvalidArgumentException("Unsupported action: {$action}");
+        if (isset(self::RESPONSE_MAP[$action])) {
+            /** @var ResponseInterface $responseClass */
+            $responseClass = self::RESPONSE_MAP[$action];
+
+            return $responseClass::fromArray($data);
         }
 
-        $factoryClass = self::FACTORIES[$action];
-        return new $factoryClass($data);
+        return EmptyResponse::fromArray([]);
     }
 }

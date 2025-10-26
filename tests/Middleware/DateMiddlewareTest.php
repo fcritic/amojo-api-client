@@ -11,14 +11,8 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 
-/**
- * @extends TestCase
- */
 class DateMiddlewareTest extends TestCase
 {
-    /**
-     * @return void
-     */
     public function testAddsDateHeader(): void
     {
         $middleware = new DateMiddleware();

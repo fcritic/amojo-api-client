@@ -10,37 +10,22 @@ namespace AmoJo\Models;
  */
 class Channel
 {
-    /** @var string id канала чатов. Выдается при регистрации канал чатов */
-    private string $uid;
-
-    /** @var string secret_key канала чатов. Выдается при регистрации канала чатов */
+    /** id канала чатов. Выдается при регистрации канал чатов */
+    private string $uuid;
+    /** secret_key канала чатов. Выдается при регистрации канала чатов */
     private string $secretKey;
 
-    /**
-     * @param string $uid
-     * @param string $secretKey
-     */
-    public function __construct(string $uid, string $secretKey)
+    public function __construct(string $uuid, string $secretKey)
     {
-        $this->uid       = $uid;
+        $this->uuid = $uuid;
         $this->secretKey = $secretKey;
     }
 
-    /**
-     * Получения uid канала чатов
-     *
-     * @return string
-     */
-    public function getUid(): string
+    public function getUuid(): string
     {
-        return $this->uid;
+        return $this->uuid;
     }
 
-    /**
-     * Получения секретного ключа канала чатов
-     *
-     * @return string
-     */
     public function getSecretKey(): string
     {
         return $this->secretKey;

@@ -10,6 +10,12 @@ namespace AmoJo\Middleware;
  */
 final class StackMiddleware
 {
+    private const STACK = [
+        DateMiddleware::class,
+        ContentMD5Middleware::class,
+        SignatureMiddleware::class,
+    ];
+
     /**
      * Можно передать кастомную Middleware которая реализует интерфейс src/Middleware/MiddlewareInterface
      *
@@ -18,19 +24,12 @@ final class StackMiddleware
      */
     public static function create(array $additionalMiddlewareClasses = []): array
     {
-        $core = [];
+        $stack = [];
 
-        /** @var array<class-string<MiddlewareInterface>> $stack */
-        $stack = [
-            DateMiddleware::class,
-            ContentMD5Middleware::class,
-            SignatureMiddleware::class,
-        ];
-
-        foreach (array_merge($additionalMiddlewareClasses, $stack) as $class) {
-            $core[] = new $class();
+        foreach (array_merge($additionalMiddlewareClasses, self::STACK) as $class) {
+            $stack[] = new $class();
         }
 
-        return $core;
+        return $stack;
     }
 }
