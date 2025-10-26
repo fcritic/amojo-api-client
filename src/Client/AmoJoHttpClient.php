@@ -42,7 +42,7 @@ class AmoJoHttpClient
             'handler' => $stack,
             'headers' => [
                 HeaderType::CONTENT_TYPE => 'application/json',
-                HeaderType::USER_AGENT => 'amoJo-PHP-Client/1.3.1',
+                HeaderType::USER_AGENT => 'amoJo-PHP-Client/1.4.0',
             ]
         ]);
     }
